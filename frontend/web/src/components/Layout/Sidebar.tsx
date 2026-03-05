@@ -11,7 +11,8 @@ const nav = [
 ]
 
 export default function Sidebar() {
-    const band = getBandConfig(currentScore.score)
+    const { score, user } = useApp()
+    const band = getBandConfig(score.score)
 
     return (
         <aside style={{
@@ -72,7 +73,7 @@ export default function Sidebar() {
                 }}>
                     <span style={{ fontSize: 18 }}>🔥</span>
                     <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#ffc107' }}>14-Day Streak</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#ffc107' }}>{user?.streakDays || 0}-Day Streak</div>
                         <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Keep it going!</div>
                     </div>
                 </div>

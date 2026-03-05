@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { useApp } from './context/AppContext'
 import Sidebar from './components/Layout/Sidebar'
 import TopBar from './components/Layout/TopBar'
 import Dashboard from './pages/Dashboard'
@@ -6,8 +7,31 @@ import Transactions from './pages/Transactions'
 import Challenges from './pages/Challenges'
 import SplitSync from './pages/SplitSync'
 import FundingPool from './pages/FundingPool'
+import Login from './pages/Login'
+import Signup from './pages/Signup'
+import Profile from './pages/Profile'
+import BlockchainProofs from './pages/BlockchainProofs'
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+    const { isAuthenticated } = useApp()
+    if (!isAuthenticated) return <Navigate to="/login" replace />
+    return <>{children}</>
+}
 
 export default function App() {
+    const { isAuthenticated } = useApp()
+
+    // Auth pages: no sidebar/topbar
+    if (!isAuthenticated) {
+        return (
+            <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="*" element={<Navigate to="/login" replace />} />
+            </Routes>
+        )
+    }
+
     return (
         <div className="app-layout">
             <Sidebar />

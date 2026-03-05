@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { challenges, challengeHistory } from '../data/mockData'
-import { Clock, Target, CheckCircle, XCircle, Zap } from 'lucide-react'
+import { useApp } from '../context/AppContext'
+import { Clock, Zap, CheckCircle, XCircle, Shield } from 'lucide-react'
 
 const getDifficultyStyle = (d: string) => {
     if (d === 'Easy') return { bg: 'var(--accent-green-dim)', color: 'var(--accent-green)' }
@@ -14,13 +14,48 @@ const getDaysLeft = (deadline: string) => {
 }
 
 export default function Challenges() {
+    const { challenges, challengeHistory, joinChallenge, completeChallenge } = useApp()
     const [stakeModal, setStakeModal] = useState<typeof challenges[0] | null>(null)
     const [stakeAmount, setStakeAmount] = useState(200)
+    const [staking, setStaking] = useState(false)
+    const [stakeConfirmed, setStakeConfirmed] = useState(false)
+
+    const handleStake = async () => {
+        if (!stakeModal) return
+        setStaking(true)
+        try {
+            await joinChallenge(stakeModal.id, stakeAmount)
+            setStakeConfirmed(true)
+            setTimeout(() => setStakeConfirmed(false), 4000)
+        } finally {
+            setStaking(false)
+            setStakeModal(null)
+        }
+    }
+
+    const activeChallenges = challenges.filter(c => c.status === 'ACTIVE' || c.status === 'STAKED')
+    const totalStaked = challenges.reduce((s, c) => s + (c.stakeAmount || 0), 0)
 
     return (
         <div className="animate-fade-in">
             <div className="page-title">Challenges</div>
-            <div className="page-subtitle">Your 3 personalized weekly challenges — stake to earn more!</div>
+            <div className="page-subtitle">Your 3 personalized weekly challenges — stake real money to earn more!</div>
+
+            {/* Stake success confirmation */}
+            {stakeConfirmed && (
+                <div className="card" style={{ marginBottom: 20, border: '1px solid rgba(0,212,170,0.3)', background: 'rgba(0,212,170,0.06)', padding: '14px 20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <Shield size={18} color="var(--accent-green)" />
+                        <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent-green)' }}>Stake Secured ✓</div>
+                            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+                                Your stake is verified and locked. Complete the challenge to earn it back + yield.
+                            </div>
+                        </div>
+                        <button onClick={() => setStakeConfirmed(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16 }}>×</button>
+                    </div>
+                </div>
+            )}
 
             {/* Community pool banner */}
             <div style={{
@@ -33,21 +68,22 @@ export default function Challenges() {
                 <div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>Community Pool Balance</div>
                     <div style={{ fontSize: 28, fontWeight: 900, color: 'var(--accent-purple)' }}>₹2,40,500</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Earning 4.25% APY via Aave V3 — forfeited stakes grow for everyone's yield</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Stakes securely locked — forfeited stakes grow yield for winners</div>
                 </div>
                 <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Your Yield Share</div>
-                    <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--accent-green)' }}>₹450</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Your Total Staked</div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--accent-green)' }}>₹{totalStaked.toLocaleString()}</div>
                 </div>
             </div>
 
             {/* Active challenges */}
             <div className="section-title">Active This Week</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 32 }}>
-                {challenges.map(ch => {
+                {activeChallenges.map(ch => {
                     const pct = Math.round((ch.currentValue / ch.targetValue) * 100)
                     const diff = getDifficultyStyle(ch.difficulty)
                     const daysLeft = getDaysLeft(ch.deadline)
+                    const canComplete = pct >= 100 && ch.status !== 'COMPLETED'
                     return (
                         <div key={ch.id} className="card" style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
                             <div style={{
@@ -61,6 +97,9 @@ export default function Challenges() {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
                                     <div style={{ fontSize: 16, fontWeight: 700 }}>{ch.title}</div>
                                     <span style={{ padding: '2px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: diff.bg, color: diff.color }}>{ch.difficulty}</span>
+                                    {ch.status === 'STAKED' && (
+                                        <span style={{ fontSize: 10, color: 'var(--accent-green)', fontWeight: 500 }}>🔒 Secured</span>
+                                    )}
                                 </div>
                                 <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 14 }}>{ch.description}</div>
                                 <div className="progress-bar" style={{ height: 8, marginBottom: 8 }}>
@@ -77,9 +116,15 @@ export default function Challenges() {
                                 <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>STAKE</div>
                                 <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--accent-purple)', marginBottom: 8 }}>₹{ch.stakeAmount}</div>
                                 <div style={{ fontSize: 11, color: 'var(--accent-green)', marginBottom: 10 }}>+{ch.scoreBonus} pts on win</div>
-                                <button className="btn btn-primary" style={{ fontSize: 12, padding: '8px 16px' }} onClick={() => setStakeModal(ch)}>
-                                    <Zap size={13} /> Stake More
-                                </button>
+                                {canComplete ? (
+                                    <button className="btn btn-primary" style={{ fontSize: 12, padding: '8px 16px', background: 'var(--accent-green)' }} onClick={() => completeChallenge(ch.id)}>
+                                        <CheckCircle size={13} /> Claim Reward
+                                    </button>
+                                ) : (
+                                    <button className="btn btn-primary" style={{ fontSize: 12, padding: '8px 16px' }} onClick={() => { setStakeModal(ch); setStakeAmount(200) }}>
+                                        <Zap size={13} /> Stake More
+                                    </button>
+                                )}
                             </div>
                         </div>
                     )
@@ -113,18 +158,19 @@ export default function Challenges() {
                 </table>
             </div>
 
-            {/* Stake Modal */}
+            {/* Stake Modal — clean fintech language */}
             {stakeModal && (
-                <div className="modal-overlay" onClick={() => setStakeModal(null)}>
+                <div className="modal-overlay" onClick={() => !staking && setStakeModal(null)}>
                     <div className="modal-box" onClick={e => e.stopPropagation()}>
-                        <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 6 }}>Stake on Challenge</h2>
+                        <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 6 }}>Secure Your Stake</h2>
                         <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 20 }}>{stakeModal.title}</p>
 
                         <div style={{ background: 'var(--accent-purple-dim)', border: '1px solid rgba(124,107,255,0.3)', borderRadius: 8, padding: 14, marginBottom: 20 }}>
                             <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>How staking works</div>
                             <div style={{ fontSize: 13, color: 'var(--text-primary)' }}>
-                                ✅ Complete challenge → Get stake back + yield share<br />
-                                ❌ Fail → Stake goes to community yield pool
+                                🔒 Your stake is securely locked and verified<br />
+                                ✅ Complete challenge → Stake returned + yield share<br />
+                                ❌ Fail → Stake goes to community pool
                             </div>
                         </div>
 
@@ -138,14 +184,14 @@ export default function Challenges() {
                             style={{ marginBottom: 8 }}
                         />
                         <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 20 }}>
-                            Your stake is locked in an Algorand smart contract escrow until the challenge deadline.
+                            Your stake will be cryptographically verified and locked until the challenge ends.
                         </div>
 
                         <div style={{ display: 'flex', gap: 12 }}>
-                            <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => setStakeModal(null)}>
-                                🔒 Confirm Stake ₹{stakeAmount}
+                            <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleStake} disabled={staking}>
+                                {staking ? '⏳ Securing your stake...' : `🔒 Confirm Stake ₹${stakeAmount}`}
                             </button>
-                            <button className="btn btn-secondary" onClick={() => setStakeModal(null)}>Cancel</button>
+                            <button className="btn btn-secondary" onClick={() => setStakeModal(null)} disabled={staking}>Cancel</button>
                         </div>
                     </div>
                 </div>

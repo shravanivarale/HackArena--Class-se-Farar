@@ -1,8 +1,14 @@
-import { Bell, Search } from 'lucide-react'
-import { currentUser, currentScore, getBandConfig } from '../../data/mockData'
+import { useNavigate } from 'react-router-dom'
+import { Search } from 'lucide-react'
+import { useApp } from '../../context/AppContext'
+import { getBandConfig } from '../../data/mockData'
+import NotificationDropdown from '../NotificationDropdown'
 
 export default function TopBar() {
-    const band = getBandConfig(currentScore.score)
+    const { user, score } = useApp()
+    const navigate = useNavigate()
+    const band = getBandConfig(score.score)
+    const avatar = user?.avatar || '??'
 
     return (
         <header style={{
@@ -37,29 +43,27 @@ export default function TopBar() {
                 borderRadius: 'var(--radius-sm)', padding: '6px 14px',
             }}>
                 <div style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600 }}>VITALSCORE</div>
-                <div style={{ fontSize: 22, fontWeight: 900, color: band.color }}>{currentScore.score}</div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: band.color }}>{score.score}</div>
                 <div style={{ fontSize: 11, color: 'var(--text-secondary)', padding: '2px 6px', background: 'rgba(0,212,170,0.1)', borderRadius: 4, fontWeight: 600 }}>
-                    {currentScore.change > 0 ? '+' : ''}{currentScore.change}
+                    {score.change > 0 ? '+' : ''}{score.change}
                 </div>
             </div>
 
             {/* Notifications */}
-            <button style={{ position: 'relative', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: 8, cursor: 'pointer', display: 'flex' }}>
-                <Bell size={17} color="var(--text-secondary)" />
-                <span style={{
-                    position: 'absolute', top: 4, right: 4, width: 7, height: 7,
-                    background: 'var(--accent-red)', borderRadius: '50%', border: '2px solid var(--bg-primary)'
-                }} />
-            </button>
+            <NotificationDropdown />
 
-            {/* Avatar */}
-            <div style={{
-                width: 36, height: 36, borderRadius: '50%',
-                background: `linear-gradient(135deg, ${band.color}, #7c6bff)`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 13, fontWeight: 800, color: '#000', cursor: 'pointer',
-            }}>
-                {currentUser.avatar}
+            {/* Avatar → Profile */}
+            <div
+                onClick={() => navigate('/profile')}
+                title="View Profile"
+                style={{
+                    width: 36, height: 36, borderRadius: '50%',
+                    background: `linear-gradient(135deg, ${band.color}, #7c6bff)`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 13, fontWeight: 800, color: '#000', cursor: 'pointer',
+                }}
+            >
+                {avatar}
             </div>
         </header>
     )

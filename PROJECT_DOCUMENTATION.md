@@ -164,6 +164,7 @@ VitalScore Finance addresses each problem with a specific technical solution:
 3. **Blockchain as Verification Layer, Not Application Layer** — All logic runs off-chain. Blockchain records only events requiring trustless verification (escrow, NFT snapshots, treasury). App works even if blockchain is temporarily unavailable.
 4. **Privacy by Architecture** — PII is tokenized at the ingestion boundary via `user_token_mapping`. Internal services never handle raw personal identifiers.
 5. **Graceful Degradation** — Every blockchain-dependent feature has an off-chain fallback. Core scoring and tracking always function regardless of Algorand network status.
+6. **Invisible Blockchain Architecture** — The user-facing UI never shows Algorand, wallet addresses, transaction hashes, or crypto terminology. Blockchain operates as a silent trust layer — users see "Verified ✓" and "Secured 🔒" instead of "Algorand TestNet" or "Txn ID: ALGO...". A dedicated "Blockchain Proofs" page (`/proofs`) surfaces the full audit trail for judges, power users, and technical reviewers. Design principle: *"Rupees in, rupees out. Blockchain is the backend ledger, not the user interface."*
 
 ### Data Flow: Transaction to Score Update
 
@@ -877,24 +878,31 @@ React 18 + TypeScript + Vite + React Router 6 + Recharts + Framer Motion + Lucid
 ### File Structure
 ```
 frontend/web/src/
-├── App.tsx                          — Main routing (9 routes)
+├── App.tsx                          — Main routing (13 routes)
 ├── main.tsx                         — React DOM entry point
 ├── index.css                        — Global styling
+├── context/
+│   └── AppContext.tsx               — Central state management (800+ lines)
 ├── components/
 │   ├── Layout/
 │   │   ├── Sidebar.tsx              — Navigation sidebar with icons
-│   │   └── TopBar.tsx               — Header with user menu
+│   │   ├── TopBar.tsx               — Header with user menu + notifications
+│   │   └── NotificationDropdown.tsx — Slide-in notification panel
 │   └── Dashboard/
 │       └── HeartbeatVisualizer.tsx   — Animated heartbeat by score band
 ├── pages/
-│   ├── Dashboard.tsx                — Home: score, spending, forecast
+│   ├── Dashboard.tsx                — Home: score, spending, nudge, ghosts
 │   ├── Transactions.tsx             — Transaction history + manual entry
-│   ├── Challenges.tsx               — Weekly challenges + stakes
+│   ├── Challenges.tsx               — Weekly challenges + stakes (invisible blockchain)
 │   ├── Squads.tsx                   — Squad formation + status
 │   ├── League.tsx                   — Leaderboard + rankings
 │   ├── NFT.tsx                      — Soul-Bound NFT viewer
-│   ├── SplitSync.tsx                — Bill splitting interface
+│   ├── SplitSync.tsx                — Bill splitting + Friends list
 │   ├── FundingPool.tsx              — Commitment pool manager
+│   ├── BlockchainProofs.tsx         — Full blockchain audit trail (judges/power users)
+│   ├── Profile.tsx                  — User profile + blockchain verified badge
+│   ├── Login.tsx                    — Authentication + login
+│   ├── Signup.tsx                   — Registration
 │   └── Settings.tsx                 — Profile + preferences
 └── data/
     └── mockData.ts                  — Demo data for all pages
@@ -942,9 +950,10 @@ The richest page in the app, combining multiple data visualizations:
 #### 3. Challenges (`/challenges`)
 - This week's 3 generated challenges with difficulty badges
 - Stake amount selector (₹50–₹1,000)
-- "Stake on Challenge" → Algorand escrow transaction
+- "Secure Your Stake" → stakes cryptographically verified (invisible blockchain — user sees "Secured ✓")
 - Challenge completion progress tracking
-- Challenge history
+- Community Pool balance display
+- Challenge history table
 
 #### 4. Squads (`/squads`)
 - Create Squad form (name, contribution, duration)
@@ -967,10 +976,13 @@ The richest page in the app, combining multiple data visualizations:
 
 #### 7. SplitSync (`/splitsync`)
 - Initiate bill split form (title, amount, participants)
-- Participant management (add by phone/username)
-- WhatsApp share link generation
+- **Frequent Friends quick-pick** — tap to add recurring contacts (sorted by split count)
+- Friends management panel (add/remove, auto-saved from splits)
+- Participant management (add manually or pick from friends)
+- WhatsApp share link generation via Twilio
 - Payment status tracker per participant
 - Completion confirmation with XP rewards
+- Split settlement triggers blockchain proof generation
 
 #### 8. Funding Pool (`/pools`)
 - Create/join commitment pools
@@ -986,6 +998,27 @@ The richest page in the app, combining multiple data visualizations:
 - Bank connections management (connect/revoke consent)
 - Data export / account deletion
 - Feature toggles (escrow, squads, B2B)
+
+#### 10. Blockchain Proofs (`/proofs`) — Judges/Power Users Only
+- Full audit trail of all cryptographic verifications
+- Filterable by type: Escrow Lock, Challenge Complete, Ghost Kill, Split Settle, Score Snapshot
+- Transaction ID copy-to-clipboard + Algo Explorer links
+- Summary stats per proof type
+- Technical note explaining the "invisible blockchain" architecture for judges
+- Searchable by description or transaction ID
+
+#### 11. Profile (`/profile`)
+- User info (name, email, phone) + avatar
+- Score breakdown (Necessity Ratio, Savings Ratio, Streak Bonus, Challenge Bonus)
+- Stats grid: Vital Points, Challenges Done, Active Challenges, Freezes, Spending, Income
+- **Blockchain Verified badge** — shows "All financial actions cryptographically verified" with link to /proofs
+- Logout
+
+#### 12. Login (`/login`) & Signup (`/signup`)
+- Email + password authentication (local fallback + backend auth service)
+- New user registration with name, email, phone
+- Auto-redirect to dashboard after authentication
+- Persistent session via localStorage
 
 ---
 
@@ -1386,8 +1419,8 @@ RAZORPAY_WEBHOOK_SECRET=xxxxxxxxxxxxxxxxxxxxxxxx
 
 | # | Feature | Description | Status |
 |---|---|---|---|
-| 14 | **SubVampire** 👻 | Ghost subscription detection | 🔲 Not started |
-| 15 | **Smart Nudge** | Categorization confirmation with XP rewards | 🔲 Not started |
+| 14 | **SubVampire** 👻 | Ghost subscription detection | ✅ Algorithm + UI complete |
+| 15 | **Smart Nudge** | Categorization confirmation with XP rewards | ✅ Frontend complete |
 | 16 | **Inflation Adjustment** | CPI-based score calibration | 🔲 Not started |
 | 17 | **Emergency Mode** | Temporary penalty relaxation for large essential expenses | 🔲 Not started |
 
@@ -1398,12 +1431,21 @@ RAZORPAY_WEBHOOK_SECRET=xxxxxxxxxxxxxxxxxxxxxxxx
 | 18 | **Soul-Bound NFT** | Portable, non-transferable financial reputation | 🔄 Contract ready, service partial |
 | 19 | **VitalToken** | Fungible reward token (1B supply) | ✅ Contract complete |
 | 20 | **IPFS Metadata** | Decentralized NFT metadata storage | 🔄 Structure ready, upload pending |
+| 21 | **Invisible Blockchain** | All crypto/wallet language hidden from user UI | ✅ Frontend complete |
+| 22 | **Blockchain Proofs** | Full audit trail page for judges/power users | ✅ Frontend complete |
+
+### Social Enhancement Features
+
+| # | Feature | Description | Status |
+|---|---|---|---|
+| 23 | **Friends List** | Recurring contacts for SplitSync (auto-saved from splits) | ✅ Frontend + AppContext complete |
+| 24 | **Friends Quick-Pick** | Tap-to-add friends in split creation | ✅ Frontend complete |
 
 ---
 
 ## 16. Implementation Status
 
-### Overall Progress: ~25% Complete
+### Overall Progress: ~55% Complete
 
 ```
 Foundation & Infrastructure    ████████████████████ 100%  ✅
@@ -1413,13 +1455,20 @@ User Profile Service           ████████████████�
 Shared TypeScript Types        ████████████████████ 100%  ✅
 Docker Compose Environment     ████████████████████ 100%  ✅
 Frontend Setup & Routing       ████████████████████ 100%  ✅
+Frontend State Management      ████████████████████ 100%  ✅ (AppContext 800+ lines)
+Frontend Auth (Login/Signup)   ████████████████████ 100%  ✅
+Frontend Dashboard             ████████████████████ 100%  ✅ (Smart Nudge + SubVampire)
+Frontend Transactions          ████████████████████ 100%  ✅
+Frontend Challenges            ████████████████████ 100%  ✅ (Invisible blockchain)
+Frontend SplitSync             ████████████████████ 100%  ✅ (Friends list + WhatsApp)
+Frontend Profile               ████████████████████ 100%  ✅ (Blockchain Verified badge)
+Frontend Blockchain Proofs     ████████████████████ 100%  ✅ (Judge audit trail)
 Score Engine Service           ████████████████░░░░  70%  🔄
 Gamification Service           ██████████████░░░░░░  65%  🔄
 Transaction Ingestion          ██████████████░░░░░░  65%  🔄
 AI Categorization              ████████████░░░░░░░░  55%  🔄
 Blockchain Service             ██████████░░░░░░░░░░  45%  🔄
 Auth Service                   ████░░░░░░░░░░░░░░░░  15%  🔲
-Frontend API Integration       ██░░░░░░░░░░░░░░░░░░  10%  🔲
 Testing                        ░░░░░░░░░░░░░░░░░░░░   0%  🔲
 Deployment (AWS)               ░░░░░░░░░░░░░░░░░░░░   0%  🔲
 ```
