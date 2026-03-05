@@ -1,17 +1,13 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, ArrowLeftRight, Trophy, Users, Award, Shield, Settings, Zap, Split, Wallet } from 'lucide-react'
+import { LayoutDashboard, ArrowLeftRight, Trophy, Zap, Split, Wallet } from 'lucide-react'
 import { currentScore, getBandConfig } from '../../data/mockData'
 
 const nav = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/transactions', icon: ArrowLeftRight, label: 'Transactions' },
     { to: '/challenges', icon: Trophy, label: 'Challenges' },
-    { to: '/squads', icon: Users, label: 'Squads' },
-    { to: '/league', icon: Award, label: 'League' },
-    { to: '/nft', icon: Shield, label: 'My NFT' },
     { to: '/splitsync', icon: Split, label: 'SplitSync' },
     { to: '/pools', icon: Wallet, label: 'Pools' },
-    { to: '/settings', icon: Settings, label: 'Settings' },
 ]
 
 export default function Sidebar() {

@@ -121,64 +121,8 @@ export const challengeHistory = [
     { id: 'ch_old4', title: 'Invest ₹5k this week', difficulty: 'Medium', status: 'COMPLETED', earnedPoints: 30, completedAt: '2025-01-26' },
 ];
 
-export const mySquad = {
-    id: 'sq1',
-    name: 'Money Movers',
-    description: 'Friends from college saving together',
-    totalMembers: 5,
-    weeklyContribution: 2000,
-    currentPoolSize: 42000,
-    targetPoolSize: 80000,
-    seasonDays: 90,
-    seasonDaysLeft: 63,
-    currentAPY: 4.25,
-    protocol: 'Aave V3',
-    estimatedYield: 1785,
-    members: [
-        { name: 'Arjun S.', avatar: 'AS', contribution: 8000, streak: 14, progress: 80 },
-        { name: 'Priya M.', avatar: 'PM', contribution: 10000, streak: 21, progress: 100 },
-        { name: 'Rohan K.', avatar: 'RK', contribution: 6000, streak: 9, progress: 60 },
-        { name: 'Sneha T.', avatar: 'ST', contribution: 10000, streak: 27, progress: 100 },
-        { name: 'Karan J.', avatar: 'KJ', contribution: 8000, streak: 14, progress: 80 },
-    ],
-};
 
-export const leagueData = {
-    userRank: 12,
-    totalInLeague: 178,
-    league: 'Gold',
-    weeklyPoints: 450,
-    percentile: 93,
-    leaderboard: [
-        { rank: 1, name: 'User_★★★1', score: 891, points: 1200, change: 0 },
-        { rank: 2, name: 'User_★★★2', score: 874, points: 1150, change: 1 },
-        { rank: 3, name: 'User_★★★3', score: 862, points: 1080, change: -1 },
-        { rank: 4, name: 'User_★★★4', score: 851, points: 980, change: 2 },
-        { rank: 5, name: 'User_★★★5', score: 839, points: 920, change: 0 },
-        { rank: 12, name: 'You (Arjun S.)', score: 742, points: 450, change: 3, isUser: true },
-    ],
-};
 
-export const nftData = {
-    assetId: 7724891,
-    ipfsHash: 'QmBQFm9VGGZjm7wvVi75EFbcPmN2MxM2RxH5yrDkyiW7Gs',
-    createdAt: '2025-01-01T00:00:00Z',
-    badges: [
-        { id: 'streak_14', name: '14-Day Streak', icon: '🔥', earnedAt: '2025-02-15' },
-        { id: 'first_challenge', name: 'First Challenge Complete', icon: '⚡', earnedAt: '2025-02-09' },
-        { id: 'squad_member', name: 'Squad Player', icon: '🤝', earnedAt: '2025-01-15' },
-        { id: 'top10_league', name: 'League Top 10%', icon: '🏆', earnedAt: '2025-02-22' },
-    ],
-    monthlySnapshots: [
-        { month: 'Aug 2024', score: 580, band: 'Vital Warning', trajectory: 'STABLE' },
-        { month: 'Sep 2024', score: 612, band: 'Vital Strong', trajectory: 'IMPROVING' },
-        { month: 'Oct 2024', score: 645, band: 'Vital Strong', trajectory: 'IMPROVING' },
-        { month: 'Nov 2024', score: 668, band: 'Vital Strong', trajectory: 'IMPROVING' },
-        { month: 'Dec 2024', score: 695, band: 'Vital Strong', trajectory: 'IMPROVING' },
-        { month: 'Jan 2025', score: 724, band: 'Vital Strong', trajectory: 'IMPROVING' },
-        { month: 'Feb 2025', score: 742, band: 'Vital Strong', trajectory: 'IMPROVING' },
-    ],
-};
 
 export const getBandConfig = (score: number) => {
     if (score >= 800) return { label: 'Vital Elite', key: 'elite', color: '#00d4aa', pulseColor: '#00d4aa', glowColor: 'rgba(0,212,170,0.4)', speed: 1.0, rhythm: 'strong' };
