@@ -1,571 +1,752 @@
-# VitalScore Finance — Manual Setup Guide
+# 🚀 VitalScore Finance — Complete Setup Guide (Beginner Friendly)
 
-> **VitalScore v4.0** | Vista HackArena 2025 | India-First | Free-Tier Verified
-
-Complete step-by-step guide to set up VitalScore Finance locally.
-
----
-
-## Table of Contents
-
-1. [Prerequisites](#1-prerequisites)
-2. [Repository Setup](#2-repository-setup)
-3. [Environment Configuration](#3-environment-configuration)
-4. [Database Setup](#4-database-setup)
-5. [API Keys (Free Tier)](#5-api-keys-free-tier)
-6. [Backend Services](#6-backend-services)
-7. [Frontend Web App](#7-frontend-web-app)
-8. [Algorand Blockchain Setup](#8-algorand-blockchain-setup)
-9. [Smart Contract Deployment](#9-smart-contract-deployment)
-10. [Running the Full Stack](#10-running-the-full-stack)
-11. [Demo Flow Testing](#11-demo-flow-testing)
-12. [Troubleshooting](#12-troubleshooting)
+> This guide will walk you through EVERY step to set up VitalScore Finance on your computer.
+> No step is skipped. If you're new to this, just follow step by step from top to bottom.
 
 ---
 
-## 1. Prerequisites
+## 📋 Table of Contents
 
-### Required Software
+1. [What You Need to Install First](#step-1-install-required-software)
+2. [Open the Project](#step-2-open-the-project)
+3. [Understanding the Project Structure](#step-3-understanding-the-project-structure)
+4. [Set Up Environment Variables](#step-4-set-up-environment-variables)
+5. [Get Free API Keys](#step-5-get-free-api-keys)
+6. [Set Up Databases (Docker)](#step-6-set-up-databases-with-docker)
+7. [Set Up Databases (Without Docker — Alternative)](#step-7-set-up-databases-without-docker)
+8. [Install Backend Dependencies](#step-8-install-backend-dependencies)
+9. [Install Python Dependencies (Blockchain)](#step-9-install-python-dependencies-blockchain)
+10. [Install Frontend Dependencies](#step-10-install-frontend-dependencies)
+11. [Set Up Algorand Blockchain (TestNet)](#step-11-set-up-algorand-blockchain-testnet)
+12. [Compile Smart Contracts](#step-12-compile-smart-contracts)
+13. [Start the Backend Services](#step-13-start-the-backend-services)
+14. [Start the Frontend](#step-14-start-the-frontend)
+15. [Run the Full Project Together](#step-15-run-the-full-project-together)
+16. [Test That Everything Works](#step-16-test-that-everything-works)
+17. [Demo Walkthrough](#step-17-demo-walkthrough)
+18. [Common Problems and Fixes](#step-18-common-problems-and-fixes)
 
-| Software | Version | Purpose | Install Command |
-|----------|---------|---------|-----------------|
-| **Node.js** | ≥ 18.x | Backend services, frontend | [Download](https://nodejs.org/) |
-| **Python** | ≥ 3.11 | Blockchain service, ML scripts | [Download](https://python.org/) |
-| **Git** | Latest | Version control | [Download](https://git-scm.com/) |
-| **Docker Desktop** | Latest | Database containers | [Download](https://docker.com/) |
-| **npm** | ≥ 9.x | Package management | Included with Node.js |
+---
 
-### Optional (Recommended)
+## Step 1: Install Required Software
 
-| Software | Purpose |
-|----------|---------|
-| **AlgoKit** | Algorand smart contract development |
-| **VS Code** | Recommended IDE with extensions |
-| **Postman** | API testing |
+You need to install these programs on your computer first. All are free.
 
-### Verify Installation
+### 1.1 Install Node.js
 
-Open a terminal and run:
+Node.js runs all the backend services and the frontend.
 
-```bash
-node --version        # Should show v18.x or higher
-npm --version         # Should show 9.x or higher
-python --version      # Should show 3.11+
-git --version         # Should show git version 2.x+
-docker --version      # Should show Docker version 24.x+
+1. Go to **https://nodejs.org/**
+2. Click the **LTS** (Long Term Support) button — this downloads the installer
+3. Run the downloaded installer
+4. Click **Next** through all the screens, keep defaults
+5. At the end, make sure **"Add to PATH"** is checked
+6. Click **Install** and wait for it to finish
+7. **Restart your terminal** (close and reopen PowerShell)
+
+**Verify it worked:**
+```powershell
+node --version
+```
+You should see something like `v20.11.0` or higher. If you see an error, restart your computer and try again.
+
+### 1.2 Install Python
+
+Python is needed for the blockchain service and smart contracts.
+
+1. Go to **https://www.python.org/downloads/**
+2. Click **Download Python 3.12** (or latest 3.x)
+3. Run the installer
+4. ⚠️ **IMPORTANT:** Check the box that says **"Add Python to PATH"** at the bottom of the installer
+5. Click **Install Now**
+6. **Restart your terminal**
+
+**Verify it worked:**
+```powershell
+python --version
+```
+You should see `Python 3.11.x` or `Python 3.12.x`.
+
+### 1.3 Install Git
+
+Git is for version control.
+
+1. Go to **https://git-scm.com/downloads**
+2. Download for Windows
+3. Run the installer — keep all defaults, click **Next** through everything
+4. **Restart your terminal**
+
+**Verify it worked:**
+```powershell
+git --version
 ```
 
----
+### 1.4 Install Docker Desktop (Optional — for databases)
 
-## 2. Repository Setup
+Docker runs PostgreSQL, Redis, and InfluxDB in containers. If you prefer to install databases manually, skip to Step 7.
 
-### Clone the Repository
+1. Go to **https://www.docker.com/products/docker-desktop/**
+2. Click **Download for Windows**
+3. Run the installer
+4. After installation, **restart your computer**
+5. Open Docker Desktop from your Start menu
+6. Wait for it to say **"Docker Desktop is running"** (green icon in system tray)
 
-```bash
-git clone https://github.com/[team]/vitalscore.git
-cd vitalscore
+**Verify it worked:**
+```powershell
+docker --version
 ```
 
-Or if working from an existing folder:
+> ⚠️ If Docker gives errors about WSL2, follow the on-screen instructions to install WSL2, then restart.
 
-```bash
+---
+
+## Step 2: Open the Project
+
+Open PowerShell (search for "PowerShell" in Start menu) and navigate to the project:
+
+```powershell
 cd "c:\Users\ASUS\OneDrive\Desktop\COLLEGE EVERYTHING\hackathon\dssa vit\Vitalscore finance"
 ```
 
-### Project Structure Overview
+Or if you cloned from GitHub:
+```powershell
+git clone https://github.com/[your-team]/vitalscore.git
+cd vitalscore
+```
+
+**Verify you're in the right place:**
+```powershell
+dir
+```
+You should see files like `docker-compose.yml`, `README.md`, `.env`, and folders like `backend/`, `frontend/`, `blockchain/`.
+
+---
+
+## Step 3: Understanding the Project Structure
+
+Here's what each folder does:
 
 ```
 Vitalscore finance/
-├── backend/
-│   ├── services/                  # Microservices
-│   │   ├── ai-categorization/     # 5-Layer Accuracy Engine
-│   │   ├── auth-service/          # Web3Auth authentication
-│   │   ├── blockchain-service-python/  # Algorand integration
-│   │   ├── gamification-service/  # Challenges, SubVampire, SplitSync
-│   │   ├── score-engine/          # VitalScore formula + integrity
-│   │   ├── transaction-ingestion/ # Setu Account Aggregator
-│   │   └── user-profile/          # User management
-│   └── shared-types/              # Shared TypeScript types
+│
+├── backend/                          ← All the server-side code
+│   ├── services/                     ← Each feature is a separate service
+│   │   ├── ai-categorization/        ← 5-Layer AI that categorizes your transactions
+│   │   ├── auth-service/             ← Login system (Web3Auth)
+│   │   ├── blockchain-service-python/← Algorand blockchain integration
+│   │   ├── gamification-service/     ← Challenges, SubVampire, SplitSync
+│   │   ├── score-engine/             ← Calculates the VitalScore (0-1000)
+│   │   ├── transaction-ingestion/    ← Receives bank transactions
+│   │   └── user-profile/             ← User accounts and profiles
+│   └── database/                     ← Database tables and migrations
+│       ├── schemas/                  ← SQL files that create the tables
+│       └── migrations/               ← SQL files that update the tables
+│
 ├── blockchain/
-│   └── contracts/                 # PyTeal smart contracts
-├── database/
-│   ├── migrations/                # SQL migration files
-│   └── schema/                    # Database schemas
+│   └── contracts/                    ← Algorand smart contracts (PyTeal)
+│
 ├── frontend/
-│   └── web/                       # React + Vite web application
-├── infrastructure/
-│   └── docker/                    # Docker Compose + configs
-├── .env.example                   # Environment template
-└── MANUAL_SETUP.md                # This file
+│   └── web/                          ← React website (what users see)
+│
+├── docker-compose.yml                ← Starts databases with one command
+├── .env                              ← Your secret API keys (never share this!)
+├── .env.example                      ← Template for .env
+└── MANUAL_SETUP.md                   ← This file!
 ```
 
 ---
 
-## 3. Environment Configuration
+## Step 4: Set Up Environment Variables
 
-### Create Environment File
+The `.env` file stores all your secret keys and settings. A copy should already exist.
 
-```bash
-# From project root
-cp .env.example .env
+**Check if `.env` exists:**
+```powershell
+Test-Path .env
 ```
 
-### Edit `.env`
+If it says `False`, create one:
+```powershell
+Copy-Item .env.example .env
+```
 
-Open `.env` in your editor and update the following sections. Each section is documented below with instructions on how to get the values.
+If it says `True`, your `.env` already exists — you'll update it in the next step.
 
 ---
 
-## 4. Database Setup
+## Step 5: Get Free API Keys
 
-### Start Databases with Docker Compose
+Open the `.env` file in your text editor (VS Code, Notepad, etc.). We'll fill in the important API keys. **All of these are free.**
 
-```bash
-# From project root
-cd infrastructure/docker
-docker-compose up -d
-```
+### 5.1 Groq API Key (Most Important — Powers AI Classification)
 
-This starts:
-- **PostgreSQL** on port `5432` — main application database
-- **Redis** on port `6379` — caching and session store
-- **InfluxDB** on port `8086` — time-series score data
+This makes the 5-Layer Accuracy Engine work. Without it, Layer 3 (LLM) is skipped, but Layers 1, 2, 4, 5 still work.
 
-### Verify Database Containers
-
-```bash
-docker ps
-```
-
-You should see three containers running:
-```
-CONTAINER ID  IMAGE          STATUS    PORTS
-xxxx          postgres:15    Up        0.0.0.0:5432->5432/tcp
-xxxx          redis:7        Up        0.0.0.0:6379->6379/tcp
-xxxx          influxdb:2     Up        0.0.0.0:8086->8086/tcp
-```
-
-### Run Database Migrations
-
-```bash
-# Using the migration script
-cd database/migrations
-
-# Apply schema
-psql -h localhost -U postgres -d vitalscore -f 001_initial_schema.sql
-# Password: vitalscore_dev_password (from .env)
-```
-
-### Alternative: Direct SQL Setup
-
-If `psql` is not installed, connect using any PostgreSQL GUI tool (pgAdmin, DBeaver, TablePlus) with:
-- **Host:** `localhost`
-- **Port:** `5432`
-- **Database:** `vitalscore`
-- **User:** `postgres`
-- **Password:** `vitalscore_dev_password`
-
-Then execute the SQL files in `database/schema/` and `database/migrations/` in order.
-
-### InfluxDB Setup
-
-1. Open `http://localhost:8086` in your browser
-2. Create organization: `vitalscore`
-3. Create bucket: `vitalscore`
-4. Copy the generated API token to `.env` as `INFLUXDB_TOKEN`
-
----
-
-## 5. API Keys (Free Tier)
-
-All API keys below are available on **free tiers** at zero cost.
-
-### 5.1 Groq API (5-Layer Accuracy Engine — Layer 3)
-
-Groq provides the LLM for transaction categorization. Free tier: **6,000 RPM**.
-
-1. Go to [https://console.groq.com](https://console.groq.com)
-2. Sign up with Google/GitHub
-3. Click **API Keys** in the sidebar
-4. Click **Create API Key**
-5. Copy the key to `.env`:
+1. Open **https://console.groq.com** in your browser
+2. Click **Sign Up** (you can use Google, GitHub, or email)
+3. After signing in, click **"API Keys"** in the left sidebar
+4. Click **"Create API Key"**
+5. Give it a name like `vitalscore-dev`
+6. Click **Submit**
+7. **Copy the key** (it starts with `gsk_`)
+8. Open your `.env` file and find this line:
    ```
-   GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxxx
+   GROQ_API_KEY=your_groq_api_key
    ```
-
-### 5.2 Web3Auth (Authentication)
-
-Web3Auth provides passwordless + social login. Free tier: **1,000 MAU**.
-
-1. Go to [https://dashboard.web3auth.io](https://dashboard.web3auth.io)
-2. Sign up and create a new project
-3. Select **Plug and Play** → **Web**
-4. Copy the **Client ID** to `.env`:
+9. Replace `your_groq_api_key` with the key you copied:
    ```
-   WEB3AUTH_CLIENT_ID=xxxxxx
+   GROQ_API_KEY=gsk_abc123xyz789...
    ```
+10. **Save the file**
 
-### 5.3 Setu Account Aggregator (Financial Data)
+### 5.2 Web3Auth Client ID (Login System)
 
-Setu provides the Account Aggregator API for bank data. **Sandbox is free**.
+1. Open **https://dashboard.web3auth.io** in your browser
+2. Sign up (Google or email)
+3. Click **"Create a New Project"**
+4. Name: `VitalScore Finance`
+5. Product: Select **"Plug and Play"**
+6. Platform: Select **"Web"**
+7. Click **"Create"**
+8. Copy the **Client ID** shown on the dashboard
+9. Open `.env` and find:
+   ```
+   WEB3AUTH_CLIENT_ID=your_web3auth_client_id
+   ```
+10. Replace with your Client ID and save
 
-1. Go to [https://bridge.setu.co](https://bridge.setu.co)
-2. Sign up for a developer account
-3. Go to **Products** → **Account Aggregator** → **Sandbox**
-4. Copy credentials to `.env`:
+### 5.3 Setu Account Aggregator (Bank Data — Sandbox Mode)
+
+This fetches simulated bank transaction data.
+
+1. Open **https://bridge.setu.co** in your browser
+2. Click **"Sign Up"** and create an account
+3. After login, go to **Products** → **Account Aggregator**
+4. Click **"Try Sandbox"** (completely free)
+5. You'll see a **Client ID** and **Client Secret**
+6. Open `.env` and find:
    ```
    SETU_CLIENT_ID=your_setu_client_id
    SETU_CLIENT_SECRET=your_setu_client_secret
-   SETU_ENV=sandbox
    ```
+7. Replace with your values and save
 
-### 5.4 Algorand TestNet (Blockchain)
+> 💡 If you can't sign up for Setu right now, that's OK. The app will still work — it will just use mock transaction data instead of real bank data.
 
-1. No API key needed for AlgoNode TestNet
-2. Fund your server wallet from the faucet (see Section 8)
+### 5.4 Firebase Cloud Messaging (Push Notifications — Optional)
 
-### 5.5 Firebase Cloud Messaging (Notifications)
+Only needed if you want push notifications to work.
 
-1. Go to [https://console.firebase.google.com](https://console.firebase.google.com)
-2. Create a new project (or use existing)
-3. Go to **Project Settings** → **Cloud Messaging**
-4. Copy the **Server Key** to `.env`:
-   ```
-   FCM_SERVER_KEY=AAAAxxxxxxx
-   ```
+1. Open **https://console.firebase.google.com**
+2. Click **"Add Project"** → name it `VitalScore`
+3. After creation, click the ⚙️ gear icon → **Project Settings**
+4. Go to **"Cloud Messaging"** tab
+5. Copy the **Server Key**
+6. Open `.env`, find `FCM_SERVER_KEY=`, and paste it
 
-### 5.6 Supabase (Optional — Alternative to Local PostgreSQL)
+> 💡 This is optional. The app works without notifications.
 
-If you want to use Supabase instead of local PostgreSQL:
+### 5.5 Summary — Which Keys Are Needed?
 
-1. Go to [https://supabase.com](https://supabase.com)
-2. Create a new project (free tier: 500MB database)
-3. Go to **Settings** → **API**
-4. Copy values to `.env`:
-   ```
-   SUPABASE_URL=https://xxxx.supabase.co
-   SUPABASE_ANON_KEY=eyJhbGcixxxxxxx
-   SUPABASE_SERVICE_KEY=eyJhbGcixxxxxxx
-   ```
+| Key | Required? | What Breaks Without It? |
+|-----|-----------|------------------------|
+| **GROQ_API_KEY** | Recommended | Layer 3 LLM is skipped (Layers 1,2,4,5 still work) |
+| **WEB3AUTH_CLIENT_ID** | Optional | Login uses placeholder mode |
+| **SETU_CLIENT_ID/SECRET** | Optional | Uses mock bank data |
+| **FCM_SERVER_KEY** | Optional | No push notifications |
+| Everything else | No change needed | Default values work for local dev |
 
 ---
 
-## 6. Backend Services
+## Step 6: Set Up Databases with Docker
 
-Each microservice is an independent Node.js/TypeScript application.
+> ⚠️ You must have Docker Desktop **running** before this step.
+> If you don't have Docker, skip to **Step 7** for manual database setup.
 
-### Install Dependencies for All Services
+### 6.1 Start Docker Desktop
 
-```bash
-# From project root — install each service
-cd backend/services/ai-categorization && npm install && cd ../../..
-cd backend/services/auth-service && npm install && cd ../../..
-cd backend/services/gamification-service && npm install && cd ../../..
-cd backend/services/score-engine && npm install && cd ../../..
-cd backend/services/transaction-ingestion && npm install && cd ../../..
-cd backend/services/user-profile && npm install && cd ../../..
-```
+1. Open **Docker Desktop** from your Start menu
+2. Wait until the bottom-left corner shows a **green** icon and says "Engine running"
+3. This might take 1-2 minutes
 
-### Or use a script (PowerShell):
+### 6.2 Start the Databases
+
+Open PowerShell in the project folder:
 
 ```powershell
-$services = @(
-    "ai-categorization",
-    "auth-service",
-    "gamification-service",
-    "score-engine",
-    "transaction-ingestion",
-    "user-profile"
-)
+cd "c:\Users\ASUS\OneDrive\Desktop\COLLEGE EVERYTHING\hackathon\dssa vit\Vitalscore finance"
+docker-compose up -d
+```
+
+> ⚠️ Note: the `docker-compose.yml` is in the **project root folder**, NOT in `infrastructure/docker/`.
+
+This command will:
+- Download PostgreSQL, Redis, InfluxDB, and other images (first time only — may take 5-10 minutes)
+- Start all database containers in the background
+
+### 6.3 Verify Databases Are Running
+
+```powershell
+docker ps
+```
+
+You should see containers like:
+```
+CONTAINER ID   IMAGE                    STATUS    PORTS
+xxxx           postgres:15-alpine       Up        0.0.0.0:5432->5432/tcp
+xxxx           redis:7-alpine           Up        0.0.0.0:6379->6379/tcp
+xxxx           influxdb:2.7-alpine      Up        0.0.0.0:8086->8086/tcp
+xxxx           localstack/localstack    Up        0.0.0.0:4566->4566/tcp
+```
+
+If a container failed, check its logs:
+```powershell
+docker logs vitalscore-postgres
+```
+
+### 6.4 Load Database Schema
+
+The database tables are automatically created by the init scripts mounted from `backend/database/schemas/`. No manual SQL needed.
+
+To verify the database was created:
+```powershell
+docker exec vitalscore-postgres psql -U postgres -d vitalscore -c "\dt"
+```
+
+This should list the tables. If you see tables, the database is ready!
+
+### 6.5 Access Database Management Tools (Optional)
+
+| Tool | URL | Login |
+|------|-----|-------|
+| **PgAdmin** (PostgreSQL GUI) | http://localhost:5050 | Email: `admin@vitalscore.local`, Password: `admin` |
+| **Redis Commander** | http://localhost:8081 | No login needed |
+| **InfluxDB UI** | http://localhost:8086 | User: `admin`, Password: `vitalscore_influx_password` |
+
+---
+
+## Step 7: Set Up Databases Without Docker
+
+> Only follow this section if you **cannot use Docker**.
+
+### 7.1 Install PostgreSQL Manually
+
+1. Download from **https://www.postgresql.org/download/windows/**
+2. Run the installer
+3. Set password to: `vitalscore_dev_password`
+4. Keep default port: `5432`
+5. After install, open **pgAdmin** (installed with PostgreSQL)
+6. Right-click **Databases** → **Create** → **Database**
+7. Name: `vitalscore`
+8. Click **Save**
+
+### 7.2 Load the Schema
+
+In pgAdmin, click on the `vitalscore` database, then open **Query Tool** and paste the contents of each file in `backend/database/schemas/` one at a time. Execute each one.
+
+### 7.3 Install Redis Manually
+
+1. Download from **https://github.com/microsoftarchive/redis/releases** (Windows port)
+2. Run the installer
+3. The Redis server will start automatically on port `6379`
+
+### 7.4 InfluxDB (Optional)
+
+InfluxDB is used for time-series score tracking. You can skip this for basic testing.
+
+If you want it:
+1. Download from **https://portal.influxdata.com/downloads/**
+2. Install and start the service
+3. Open **http://localhost:8086** and set up the organization as `vitalscore`
+
+---
+
+## Step 8: Install Backend Dependencies
+
+Each backend service needs its own dependencies installed. Run this command from the **project root folder**:
+
+```powershell
+cd "c:\Users\ASUS\OneDrive\Desktop\COLLEGE EVERYTHING\hackathon\dssa vit\Vitalscore finance"
+```
+
+Then install dependencies for each service (one by one):
+
+```powershell
+# AI Categorization Service (5-Layer Accuracy Engine)
+cd backend\services\ai-categorization
+npm install
+cd ..\..\..
+
+# Authentication Service
+cd backend\services\auth-service
+npm install
+cd ..\..\..
+
+# Gamification Service (SubVampire, SplitSync, Challenges)
+cd backend\services\gamification-service
+npm install
+cd ..\..\..
+
+# Score Engine (VitalScore formula)
+cd backend\services\score-engine
+npm install
+cd ..\..\..
+
+# Transaction Ingestion (Bank transactions)
+cd backend\services\transaction-ingestion
+npm install
+cd ..\..\..
+
+# User Profile Service
+cd backend\services\user-profile
+npm install
+cd ..\..\..
+```
+
+> 💡 **Each `npm install` might take 1-2 minutes.** That's normal.
+
+**Or do it all at once with this PowerShell script:**
+
+```powershell
+$root = "c:\Users\ASUS\OneDrive\Desktop\COLLEGE EVERYTHING\hackathon\dssa vit\Vitalscore finance"
+$services = @("ai-categorization","auth-service","gamification-service","score-engine","transaction-ingestion","user-profile")
 
 foreach ($svc in $services) {
     Write-Host "Installing $svc..." -ForegroundColor Cyan
-    Push-Location "backend/services/$svc"
+    Set-Location "$root\backend\services\$svc"
     npm install
-    Pop-Location
 }
+Set-Location $root
+Write-Host "All services installed!" -ForegroundColor Green
 ```
 
-### Install Python Blockchain Service Dependencies
-
-```bash
-cd backend/services/blockchain-service-python
-pip install -r requirements.txt
-cd ../../..
+**Verify it worked:** Check that `node_modules` folder exists inside each service:
+```powershell
+Get-ChildItem backend\services -Directory | ForEach-Object { Write-Host "$($_.Name): $(Test-Path (Join-Path $_.FullName 'node_modules'))" }
 ```
-
-### Start Individual Services
-
-Each service runs on a different port:
-
-| Service | Port | Start Command |
-|---------|------|---------------|
-| User Profile | 3001 | `cd backend/services/user-profile && npm run dev` |
-| Auth Service | 3002 | `cd backend/services/auth-service && npm run dev` |
-| Transaction Ingestion | 3003 | `cd backend/services/transaction-ingestion && npm run dev` |
-| Score Engine | 3004 | `cd backend/services/score-engine && npm run dev` |
-| Gamification | 3005 | `cd backend/services/gamification-service && npm run dev` |
-| Blockchain | 5001 | `cd backend/services/blockchain-service-python && python app.py` |
-| AI Categorization | 3007 | `cd backend/services/ai-categorization && npm run dev` |
-
-### Verify Services
-
-```bash
-curl http://localhost:3001/health   # User Profile
-curl http://localhost:3004/health   # Score Engine
-curl http://localhost:3007/health   # AI Categorization
-curl http://localhost:5001/health   # Blockchain
-```
-
-All should return `{ "status": "OK" }`.
+All should say `True`.
 
 ---
 
-## 7. Frontend Web App
+## Step 9: Install Python Dependencies (Blockchain)
 
-### Install Dependencies
+The blockchain service runs on Python (Flask). Install its dependencies:
 
-```bash
-cd frontend/web
-npm install
+```powershell
+cd "c:\Users\ASUS\OneDrive\Desktop\COLLEGE EVERYTHING\hackathon\dssa vit\Vitalscore finance"
+cd backend\services\blockchain-service-python
+pip install -r requirements.txt
+cd ..\..\..
 ```
 
-### Start Development Server
+Also install smart contract dependencies:
 
-```bash
+```powershell
+cd blockchain\contracts
+pip install -r requirements.txt
+cd ..\..
+```
+
+> ⚠️ If `pip` doesn't work, try `python -m pip install -r requirements.txt`
+
+---
+
+## Step 10: Install Frontend Dependencies
+
+```powershell
+cd "c:\Users\ASUS\OneDrive\Desktop\COLLEGE EVERYTHING\hackathon\dssa vit\Vitalscore finance"
+cd frontend\web
+npm install
+cd ..\..
+```
+
+This installs React, Vite, Recharts, Lucide icons, and other frontend packages.
+
+**Verify:** Check that `frontend\web\node_modules` exists:
+```powershell
+Test-Path frontend\web\node_modules
+```
+Should say `True`.
+
+---
+
+## Step 11: Set Up Algorand Blockchain (TestNet)
+
+Algorand TestNet is free to use. No credit card needed.
+
+### 11.1 Generate a Server Wallet
+
+Run this Python command:
+
+```powershell
+python -c "from algosdk import account, mnemonic; private_key, address = account.generate_account(); mn = mnemonic.from_private_key(private_key); print(f'Address: {address}'); print(f'Mnemonic: {mn}')"
+```
+
+> 💡 If `algosdk` is not installed, first run: `pip install py-algorand-sdk`
+
+This will print something like:
+```
+Address: ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEFG
+Mnemonic: word1 word2 word3 word4 ... word25
+```
+
+**Save both values!**
+
+### 11.2 Fund the Wallet with Test ALGO
+
+1. Go to **https://bank.testnet.algorand.network/**
+2. Paste your **Address** from the previous step
+3. Click **Dispense**
+4. You'll receive **10 test ALGO** (free, not real money)
+
+### 11.3 Update .env
+
+Open your `.env` file and update:
+```
+ALGORAND_NETWORK=testnet
+ALGORAND_SYSTEM_WALLET_MNEMONIC=word1 word2 word3 word4 ... word25
+```
+
+Replace with your actual 25-word mnemonic.
+
+---
+
+## Step 12: Compile Smart Contracts
+
+Smart contracts are written in PyTeal (Python) and need to be compiled to TEAL.
+
+```powershell
+cd "c:\Users\ASUS\OneDrive\Desktop\COLLEGE EVERYTHING\hackathon\dssa vit\Vitalscore finance"
+cd blockchain\contracts
+python compile_contracts.py
+cd ..\..
+```
+
+This compiles 4 contracts:
+- **SoulBoundNFT** — your financial identity NFT
+- **ChallengeEscrow** — holds challenge stakes
+- **SquadTreasury** — squad savings pools
+- **VitalToken** — reward token
+
+After compilation, check the `build/` folder for `.teal` files:
+```powershell
+dir blockchain\contracts\build
+```
+
+---
+
+## Step 13: Start the Backend Services
+
+Each service runs in its own terminal window. You need to open **multiple terminals** (PowerShell windows).
+
+### Service 1: User Profile Service (Port 3001)
+
+Open a **new PowerShell window**:
+```powershell
+cd "c:\Users\ASUS\OneDrive\Desktop\COLLEGE EVERYTHING\hackathon\dssa vit\Vitalscore finance\backend\services\user-profile"
+npm run dev
+```
+Wait until you see: `User Profile Service running on port 3001`
+
+### Service 2: Auth Service (Port 3002)
+
+Open a **new PowerShell window**:
+```powershell
+cd "c:\Users\ASUS\OneDrive\Desktop\COLLEGE EVERYTHING\hackathon\dssa vit\Vitalscore finance\backend\services\auth-service"
 npm run dev
 ```
 
-The frontend will start at **http://localhost:5173**
+### Service 3: Transaction Ingestion (Port 3003)
 
-### Key Pages
-
-| URL | Page | Description |
-|-----|------|-------------|
-| `/` | Dashboard | Heartbeat visualizer, score overview, Smart Nudge, SubVampire |
-| `/transactions` | Transactions | Transaction list with categorization |
-| `/challenges` | Challenges | Active and available challenges |
-| `/squads` | Squads | Squad pools + SplitSync |
-| `/league` | League | India-themed league tiers |
-| `/nft` | NFT | Soul-Bound Vitality Token |
-| `/settings` | Settings | Profile, preferences, API keys |
-
----
-
-## 8. Algorand Blockchain Setup
-
-### Install AlgoKit (Optional — for local development)
-
-```bash
-# macOS
-brew install algorand/tap/algokit
-
-# Windows (with pipx)
-pipx install algokit
-
-# Or with pip
-pip install algokit
+Open a **new PowerShell window**:
+```powershell
+cd "c:\Users\ASUS\OneDrive\Desktop\COLLEGE EVERYTHING\hackathon\dssa vit\Vitalscore finance\backend\services\transaction-ingestion"
+npm run dev
 ```
 
-### Start Local Algorand Node (Optional)
+### Service 4: Score Engine (Port 3004)
 
-```bash
-algokit localnet start
+Open a **new PowerShell window**:
+```powershell
+cd "c:\Users\ASUS\OneDrive\Desktop\COLLEGE EVERYTHING\hackathon\dssa vit\Vitalscore finance\backend\services\score-engine"
+npm run dev
 ```
 
-### TestNet Configuration
+### Service 5: Gamification Service (Port 3005)
 
-For the hackathon, we use Algorand **TestNet** (no local node needed):
-
-1. **Generate Server Wallet:**
-   ```bash
-   python -c "
-   from algosdk import account
-   private_key, address = account.generate_account()
-   mnemonic = account.from_private_key(private_key)
-   print(f'Address: {address}')
-   print(f'Mnemonic: {mnemonic}')
-   "
-   ```
-
-2. **Fund from Faucet:**
-   - Go to [https://testnet.algoexplorer.io/dispenser](https://testnet.algoexplorer.io/dispenser)
-   - Or [https://bank.testnet.algorand.network](https://bank.testnet.algorand.network)
-   - Paste your address and request test ALGO (minimum 5 ALGO)
-
-3. **Update `.env`:**
-   ```
-   ALGORAND_NETWORK=testnet
-   SERVER_WALLET_MNEMONIC=word1 word2 word3 ... word25
-   ALGORAND_ALGOD_URL=https://testnet-api.algonode.cloud
-   ALGORAND_INDEXER_URL=https://testnet-idx.algonode.cloud
-   ```
-
----
-
-## 9. Smart Contract Deployment
-
-### Smart Contracts Location
-
-```
-blockchain/contracts/
-├── SoulBoundNFT.py          # ARC-69 Soul-Bound Vitality Token
-├── ChallengeEscrow.py       # On-chain challenge stake management
-├── SquadTreasury.py         # Squad savings pool with yield
-└── VitalToken.py            # VitalScore utility token
+Open a **new PowerShell window**:
+```powershell
+cd "c:\Users\ASUS\OneDrive\Desktop\COLLEGE EVERYTHING\hackathon\dssa vit\Vitalscore finance\backend\services\gamification-service"
+npm run dev
 ```
 
-### Compile Contracts (PyTeal → TEAL)
+### Service 6: AI Categorization (Port 3007)
 
-```bash
-cd blockchain/contracts
-
-# Install PyTeal
-pip install pyteal
-
-# Compile each contract
-python SoulBoundNFT.py         # Generates SoulBoundNFT.teal
-python ChallengeEscrow.py      # Generates ChallengeEscrow.teal
-python SquadTreasury.py        # Generates SquadTreasury.teal
-python VitalToken.py           # Generates VitalToken.teal
+Open a **new PowerShell window**:
+```powershell
+cd "c:\Users\ASUS\OneDrive\Desktop\COLLEGE EVERYTHING\hackathon\dssa vit\Vitalscore finance\backend\services\ai-categorization"
+npm run dev
 ```
 
-### Deploy to TestNet
+### Service 7: Blockchain Service — Python (Port 5001)
 
-```bash
-# Using the blockchain service's deploy script
-cd backend/services/blockchain-service-python
-python -c "
-from services.algorand_service import AlgorandService
-svc = AlgorandService()
-# Deploy contracts and print application IDs
-print('Deploying to TestNet...')
-"
-```
-
-After deployment, update `.env` with the returned application IDs:
-```
-CHALLENGE_ESCROW_APP_ID=12345678
-SQUAD_TREASURY_APP_ID=12345679
-SBT_NFT_APP_ID=12345680
+Open a **new PowerShell window**:
+```powershell
+cd "c:\Users\ASUS\OneDrive\Desktop\COLLEGE EVERYTHING\hackathon\dssa vit\Vitalscore finance\backend\services\blockchain-service-python"
+python app.py
 ```
 
 ---
 
-## 10. Running the Full Stack
+## Step 14: Start the Frontend
 
-### Quick Start (All Services)
+Open a **new PowerShell window** (this is the last one):
 
-Open **7 terminal windows** and run each service:
-
-**Terminal 1:** Databases
-```bash
-cd infrastructure/docker && docker-compose up
+```powershell
+cd "c:\Users\ASUS\OneDrive\Desktop\COLLEGE EVERYTHING\hackathon\dssa vit\Vitalscore finance\frontend\web"
+npm run dev
 ```
 
-**Terminal 2:** User Profile Service
-```bash
-cd backend/services/user-profile && npm run dev
+You should see:
+```
+  VITE v5.4.x  ready in 500ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: http://192.168.x.x:5173/
 ```
 
-**Terminal 3:** Score Engine
-```bash
-cd backend/services/score-engine && npm run dev
-```
+**Open your browser and go to: http://localhost:5173/**
 
-**Terminal 4:** AI Categorization (5-Layer)
-```bash
-cd backend/services/ai-categorization && npm run dev
-```
-
-**Terminal 5:** Transaction Ingestion
-```bash
-cd backend/services/transaction-ingestion && npm run dev
-```
-
-**Terminal 6:** Blockchain Service
-```bash
-cd backend/services/blockchain-service-python && python app.py
-```
-
-**Terminal 7:** Frontend
-```bash
-cd frontend/web && npm run dev
-```
-
-### Access the Application
-
-Open **http://localhost:5173** in your browser.
+You should see the VitalScore Finance dashboard with:
+- 💓 Heartbeat visualizer at the top
+- ⚡ Quick stats (Score, Streak, Savings, XP)
+- ⚠️ Smart Nudge banner (pending categorizations)
+- 🧛 SubVampire ghost subscription alerts
+- 📈 Score history chart
+- 📊 Spending breakdown
 
 ---
 
-## 11. Demo Flow Testing
+## Step 15: Run the Full Project Together
+
+Here's a summary of what needs to be running at the same time:
+
+| # | What | Terminal | Status |
+|---|------|----------|--------|
+| 0 | Docker Desktop | Background app | Must show green |
+| 1 | Databases | `docker-compose up -d` | Runs in background |
+| 2 | User Profile | `npm run dev` in user-profile | Terminal 1 |
+| 3 | Auth Service | `npm run dev` in auth-service | Terminal 2 |
+| 4 | Transaction Ingestion | `npm run dev` in transaction-ingestion | Terminal 3 |
+| 5 | Score Engine | `npm run dev` in score-engine | Terminal 4 |
+| 6 | Gamification | `npm run dev` in gamification-service | Terminal 5 |
+| 7 | AI Categorization | `npm run dev` in ai-categorization | Terminal 6 |
+| 8 | Blockchain | `python app.py` in blockchain-service-python | Terminal 7 |
+| 9 | Frontend | `npm run dev` in frontend/web | Terminal 8 |
+
+> 💡 **For the demo/hackathon, you only NEED terminals 1 (databases), 9 (frontend), and optionally 6 (AI) and 8 (blockchain).** The frontend works with mock data even without backends running.
+
+---
+
+## Step 16: Test That Everything Works
+
+### Test 1: Frontend Loads
+- Open **http://localhost:5173/** in Chrome
+- You should see the Dashboard with the heartbeat animation
+
+### Test 2: Backend Health Checks
+Open a new PowerShell and run:
+```powershell
+# Test each service (only run for services you started)
+Invoke-WebRequest -Uri http://localhost:3001/health -UseBasicParsing | Select-Object -ExpandProperty Content
+Invoke-WebRequest -Uri http://localhost:3004/health -UseBasicParsing | Select-Object -ExpandProperty Content
+Invoke-WebRequest -Uri http://localhost:3007/health -UseBasicParsing | Select-Object -ExpandProperty Content
+Invoke-WebRequest -Uri http://localhost:5001/health -UseBasicParsing | Select-Object -ExpandProperty Content
+```
+
+Each should return: `{"status":"OK","service":"..."}`
+
+### Test 3: Database Connection
+```powershell
+docker exec vitalscore-postgres psql -U postgres -d vitalscore -c "SELECT 1;"
+```
+Should return `1`.
+
+---
+
+## Step 17: Demo Walkthrough
+
+When presenting VitalScore at the hackathon, show these features in this order:
+
+1. **Dashboard** → Point out the heartbeat visualizer pulsing with the user's score
+2. **Smart Nudge** → Show the pending categorization banner with Confirm/Change buttons
+3. **SubVampire** → Show ghost subscription alerts with ghost% scores
+4. **Transactions** → Show categorized transactions with confidence levels
+5. **Challenges** → Show an active challenge with escrow stake
+6. **Squads** → Show SplitSync active splits and squad pool
+7. **NFT** → Show the Soul-Bound Vitality Token with monthly metadata
+8. **League** → Show India-themed league tiers (Agni, Prithvi, etc.)
 
 ### Pre-Demo Checklist
 
-- [ ] All database containers running (`docker ps`)
-- [ ] Backend services responding (`/health` endpoints)
-- [ ] Frontend loading at `http://localhost:5173`
-- [ ] Demo account with 90-day transaction history
-- [ ] Algorand TestNet wallet funded (>5 ALGO)
-- [ ] Screen recording backup (2 min: heartbeat → nudge → challenge → SplitSync → NFT)
+- [ ] Docker containers running (`docker ps`)
+- [ ] At least frontend running (`npm run dev` in frontend/web)
+- [ ] Browser open at **http://localhost:5173/**
+- [ ] Screen recording software ready as backup
+- [ ] Practice answers to judge questions (see below)
 
-### Demo Walkthrough
+### Key Judge Q&A Preparation
 
-1. **Dashboard** — Show the heartbeat visualizer pulsing with score
-2. **Smart Nudge** — Show pending categorization with Confirm/Change buttons
-3. **SubVampire** — Show ghost subscriptions with ghost scores and cancel flow
-4. **Transactions** — Show categorized transactions with 5-layer confidence
-5. **Challenges** — Show active challenge with escrow stake
-6. **Squads** — Show SplitSync active split and squad pool
-7. **NFT** — Show Soul-Bound Vitality Token with monthly metadata
+**Q: "How does VitalScore achieve 99% accuracy?"**
+> "It's a 5-layer progressive system. Layer 1 is a curated merchant database with 100+ Indian merchants. Layer 2 parses UPI VPA handles and note text. Layer 3 uses Groq's llama-3.1-70b LLM for ambiguous cases. Layer 4 learns from the user's personal history. Layer 5 asks the user via a Smart Nudge — but only for ~1% of transactions by Month 3."
 
-### Key Judge Q&A
-
-**Q: "How can you claim 99% accuracy with ML?"**
-> "Our 99% comes from a 5-layer system, not a single model. The LLM only handles 24% of transactions. The other 76% are resolved by our merchant database, VPA parser, and personal memory engine — which are 97–99.5% accurate with zero ML. The remaining 8% go to the user via Smart Nudge. The compound result is 99.1% at Month 3."
-
-**Q: "What if Groq API goes down?"**
-> "Layer 3 has a circuit breaker: 5 failures → bypass for 60 seconds. Layers 1, 2, 4, and 5 handle 91% of transactions independently. Accuracy degrades from 99.1% to ~95% — acceptable short-term."
+**Q: "Why Algorand?"**
+> "We use blockchain ONLY where it genuinely adds trust: challenge escrow (can't tamper with stakes), squad treasury (non-custodial savings), and soul-bound NFTs (portable, tamper-proof financial reputation). Everything else uses a regular database."
 
 ---
 
-## 12. Troubleshooting
+## Step 18: Common Problems and Fixes
 
-### Common Issues
+### "npm is not recognized"
+→ Node.js wasn't added to PATH. Reinstall Node.js and make sure "Add to PATH" is checked. Restart PowerShell.
 
-| Issue | Solution |
-|-------|----------|
-| **Port already in use** | Kill the process: `npx kill-port 3001` |
-| **Docker containers not starting** | Ensure Docker Desktop is running |
-| **npm install fails** | Delete `node_modules` and `package-lock.json`, then `npm install` |
-| **Python import errors** | Ensure you're using Python 3.11+ and `pip install -r requirements.txt` |
-| **PostgreSQL connection refused** | Check Docker container is running: `docker ps` |
-| **Frontend blank page** | Check browser console for errors, ensure backend is running |
-| **Algorand TestNet timeout** | AlgoNode may be slow; retry after 30 seconds |
-| **Groq API 429 error** | Rate limit hit (6,000 RPM); Layer 3 circuit breaker will handle this |
+### "python is not recognized"  
+→ Python wasn't added to PATH. Reinstall Python and check "Add to PATH" at the bottom of the installer. Restart PowerShell.
 
-### Reset Everything
-
-```bash
-# Stop all Docker containers
-docker-compose down -v
-
-# Remove node_modules
-find . -name "node_modules" -type d -exec rm -rf {} +
-
-# Restart fresh
+### "docker-compose: command not found" or "Cannot find path infrastructure/docker"
+→ The `docker-compose.yml` is in the **project root folder**. Make sure you run `docker-compose up -d` from the root:
+```powershell
+cd "c:\Users\ASUS\OneDrive\Desktop\COLLEGE EVERYTHING\hackathon\dssa vit\Vitalscore finance"
 docker-compose up -d
-# Re-run npm install in each service
 ```
 
-### Getting Help
+### Docker says "error during connect" or "pipe/dockerDesktopLinuxEngine"
+→ Docker Desktop is **not running**. Open Docker Desktop from Start menu and wait for it to show green. Then retry.
 
-- **Project Docs:** `design.md`, `Requirements.md`, `tasks.md`
-- **v4 Reference:** `VitalScore_v4_Final.docx`
-- **Algorand Docs:** [https://developer.algorand.org](https://developer.algorand.org)
-- **Groq Docs:** [https://console.groq.com/docs](https://console.groq.com/docs)
-- **Setu Docs:** [https://bridge.setu.co/docs](https://bridge.setu.co/docs)
+### "Port 3001 already in use"
+→ Another process is using that port. Kill it:
+```powershell
+npx kill-port 3001
+```
+
+### npm install gives errors about permissions
+→ Try running PowerShell as **Administrator** (right-click → Run as administrator)
+
+### Frontend is blank white page
+→ Open browser DevTools (F12) → Console tab. Look for red errors. Usually means a syntax error — go to the file mentioned in the error.
+
+### "Cannot find module" errors in backend services
+→ You forgot to run `npm install` in that service's folder. Go to that folder and run `npm install`.
+
+### Smart contracts won't compile
+→ Make sure PyTeal is installed:
+```powershell
+pip install pyteal
+```
+
+### Algorand wallet has 0 balance
+→ Go to **https://bank.testnet.algorand.network/** and dispense test ALGO to your address.
 
 ---
 
