@@ -117,7 +117,7 @@ This task list is generated directly from the approved Requirements.md and desig
   - [x] 5.1.4 POST /transactions/manual endpoint (add manual transaction)
   - [x] 5.1.5 GET /transactions/{userId} endpoint (get transaction history with pagination)
   - [x] 5.1.6 PATCH /transactions/{txnId}/category endpoint (override category)
-- [x] 5.2 Integrate Setu Account Aggregator API
+- [x] 5.2 Integrate Razorpay Payment Gateway
   - [x] 5.2.1 Implement RBI-compliant consent flows
   - [x] 5.2.2 Implement 90-day historical data pull on onboarding
   - [x] 5.2.3 Implement polling logic (active users: 4h, standard: 24h)
@@ -132,7 +132,7 @@ This task list is generated directly from the approved Requirements.md and desig
 - [x] 5.5 Implement shared expense tagging and proportional split
 - [x] 5.6 Implement recurring transaction detection and auto-tagging
 - [ ] 5.7 Write unit tests for Transaction Ingestion Service (>85% coverage)
-- [ ] 5.8 Write integration tests with Setu API sandbox
+- [ ] 5.8 Write integration tests with Razorpay API sandbox
 
 ---
 
@@ -506,7 +506,7 @@ This task list is generated directly from the approved Requirements.md and desig
 - [ ] 15.2 Implement authentication screens
   - [ ] 15.2.1 Login screen (Google, Apple, Phone OTP)
   - [ ] 15.2.2 Onboarding flow (5 screens max)
-  - [ ] 15.2.3 Bank connection screen (Setu integration)
+  - [ ] 15.2.3 Bank connection screen (Razorpay integration)
 - [ ] 15.3 Implement home screen
   - [ ] 15.3.1 VitalScore display with heartbeat visualization
   - [ ] 15.3.2 Heartbeat color and rhythm based on score band
@@ -655,7 +655,7 @@ This task list is generated directly from the approved Requirements.md and desig
 
 - [ ] 20.1 Write unit tests for all services (coverage targets per service)
 - [ ] 20.2 Write integration tests for all API endpoints
-- [ ] 20.3 Write integration tests for Setu API sandbox
+- [ ] 20.3 Write integration tests for Razorpay API sandbox
 - [ ] 20.4 Write integration tests for Algorand testnet
 - [ ] 20.5 Write end-to-end tests for critical user flows
   - [ ] 20.5.1 Onboarding → score calculation → first challenge
@@ -715,7 +715,7 @@ This task list is generated directly from the approved Requirements.md and desig
 - [ ] 23.5 Implement basic Squad creation and contribution tracking
 - [ ] 23.6 Implement SBT minting on Algorand testnet (one user)
 - [ ] 23.7 Integrate Web3Auth (Google login → wallet)
-- [ ] 23.8 Integrate Setu API for one test bank account
+- [ ] 23.8 Integrate Razorpay for one test bank account
 - [ ] 23.9 Create demo flow: onboard → score → challenge → squad → NFT
 
 ---

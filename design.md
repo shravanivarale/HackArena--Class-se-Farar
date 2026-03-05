@@ -47,7 +47,7 @@ The system is designed for high-throughput consumer use (target: 1 million concu
        │
 ┌──────▼──────────────────────────────────────────────────────┐
 │               EXTERNAL INTEGRATIONS                          │
-│  Setu API (Bank/UPI)  Web3Auth  CPI Data  Push Notifications│
+│  Razorpay (Payments/UPI)  Web3Auth  CPI Data  Push Notifications│
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -622,7 +622,7 @@ GET    /leaderboard/squads           → Public squad leaderboard
 Settings:
 GET    /settings                     → User settings
 PATCH  /settings                     → Update settings
-POST   /settings/connect-bank        → Initiate bank connection (Setu)
+POST   /settings/connect-bank        → Initiate bank connection (Razorpay)
 DELETE /settings/connections/{id}    → Revoke bank connection
 POST   /settings/emergency-mode      → Enable emergency mode
 ```
@@ -756,7 +756,7 @@ External Request → TLS 1.3 → API Gateway
 | AI Categorization | > 85% | Real merchant name corpus |
 | Blockchain Integration | > 80% | Algorand testnet full flows |
 | Gamification Service | > 90% | Full challenge lifecycle |
-| Transaction Ingestion | > 85% | Setu API sandbox |
+| Transaction Ingestion | > 85% | Razorpay API sandbox |
 | API Gateway | > 80% | All endpoints with auth flows |
 
 ### Key Test Scenarios
@@ -849,7 +849,7 @@ Smoke Tests → Monitor 15 minutes
 - [ ] Basic Squad creation and contribution tracking
 - [ ] SBT minting on Algorand testnet (one user)
 - [ ] Web3Auth integration (Google login → wallet)
-- [ ] Setu API connection for one test bank account
+- [ ] Razorpay integration for one test bank account
 - [ ] Demo flow: onboard → score → challenge → squad → NFT
 
 ### Phase 2 — Beta Launch (Month 1–3)

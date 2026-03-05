@@ -9,8 +9,8 @@ CREATE TABLE bank_connections (
     account_type VARCHAR(50) NOT NULL,
     account_last_four VARCHAR(4),
     connection_status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' CHECK (connection_status IN ('ACTIVE', 'INACTIVE', 'REVOKED', 'ERROR')),
-    setu_account_id VARCHAR(255) NOT NULL,
-    consent_id VARCHAR(255) NOT NULL,
+    razorpay_customer_id VARCHAR(255),
+    razorpay_order_id VARCHAR(255),
     consent_expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
     last_sync_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
@@ -122,7 +122,7 @@ CREATE TRIGGER update_streaks_updated_at BEFORE UPDATE
     EXECUTE FUNCTION update_updated_at_column();
 
 -- Comments
-COMMENT ON TABLE bank_connections IS 'Stores user bank/UPI connections via Setu Account Aggregator';
+COMMENT ON TABLE bank_connections IS 'Stores user bank/UPI connections verified via Razorpay';
 COMMENT ON TABLE streaks IS 'Tracks daily savings streaks and other streak types';
 COMMENT ON TABLE badges IS 'Stores earned badges and achievements';
 COMMENT ON TABLE leaderboards IS 'Cached weekly leaderboard rankings per league';

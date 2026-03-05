@@ -264,7 +264,7 @@ SELECT * FROM user_profiles LIMIT 5;
 1. ✅ Infrastructure setup complete
 2. ✅ User Profile Service implemented
 3. 🔄 Next: Authentication Service (Web3Auth, JWT)
-4. 🔄 Next: Transaction Ingestion Service (Setu API)
+4. 🔄 Next: Transaction Ingestion Service (Razorpay)
 5. 🔄 Next: Score Engine Service (VitalScore calculation)
 
 ## 🆘 Getting Help

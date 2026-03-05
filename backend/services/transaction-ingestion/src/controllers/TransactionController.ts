@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import pool from '../config/database';
 import logger from '../config/logger';
-import { SetuIntegrationService } from '../services/SetuIntegrationService';
+import { RazorpayService } from '../services/RazorpayService';
 import { NormalizationService } from '../services/NormalizationService';
 import { SQSPublisher } from '../services/SQSPublisher';
 
@@ -15,7 +15,13 @@ export class TransactionController {
         try {
             const { userId, phone } = req.body;
 
-            const setuConsent = await SetuIntegrationService.createConsentRequest(userId, phone);
+            // Create a Razorpay order for bank account verification
+            const order = await RazorpayService.createOrder(
+                100,  // ₹1 verification charge (in paise)
+                'INR',
+                `conn_${userId}_${Date.now()}`,
+                { userId, phone }
+            );
 
             // Store connection status locally as pending
             const connectionId = uuidv4();
@@ -28,7 +34,10 @@ export class TransactionController {
                 success: true,
                 data: {
                     connectionId,
-                    setupUrl: setuConsent.url
+                    razorpayOrderId: order.orderId,
+                    razorpayKeyId: process.env.RAZORPAY_KEY_ID || '',
+                    amount: order.amount,
+                    currency: order.currency,
                 }
             });
         } catch (error) {

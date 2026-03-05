@@ -192,7 +192,7 @@ Acceptance Criteria:
 
 The system SHALL support sign-up via Google, Apple, and phone number (OTP)
 WHEN a user signs up THEN the system SHALL automatically create a non-custodial Algorand wallet via Web3Auth without displaying seed phrases or wallet addresses to the user
-The system SHALL connect to bank accounts and UPI via the Setu Account Aggregator API using RBI-compliant consent flows
+The system SHALL connect to bank accounts and UPI via the Razorpay Payment Gateway using standard payment flows
 WHEN bank data is successfully connected THEN the system SHALL pull the prior 90 days of transaction history and compute the first VitalScore within 3 minutes
 The onboarding flow SHALL complete in 5 screens or fewer before the user sees their first VitalScore
 WHEN a user does not wish to connect bank accounts THEN the system SHALL offer manual transaction entry as a fallback

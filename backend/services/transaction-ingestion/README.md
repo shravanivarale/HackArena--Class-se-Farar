@@ -4,7 +4,7 @@ Handles receiving, normalizing, categorizing, and publishing transaction events 
 
 ## Endpoints
 
-- `POST /transactions/connections`: Setup bank connections (Setu API)
+- `POST /transactions/connections`: Setup bank connections (Razorpay)
 - `GET /transactions/connections/:userId`: Retrieve user's connected external sources
 - `POST /transactions/manual`: Manually input a cash transaction
 - `GET /transactions/:userId`: Fetch paginated transaction history

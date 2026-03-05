@@ -94,7 +94,7 @@
 
 ✅ **Transaction Ingestion Service** (Task 5.1-5.6) - COMPLETED
 - Built REST endpoints for connections and transactions
-- Integrated Setu placeholder for bank API connections
+- Integrated Razorpay placeholder for bank API connections
 - Implemented LocalStack SQS publisher for event queues
 - Built deduplication, tokenization, and rule-based categorization Layers
 - Created Dockerfile for containerization
@@ -109,7 +109,7 @@
    - Write integration tests for API endpoints
 
 2. **Transaction Ingestion Service** (Task 5.1-5.8)
-   - Implement Setu API integration
+   - Implement Razorpay payment integration
    - Create transaction normalization pipeline
    - Set up SQS event publishing
    - Implement shared expense handling

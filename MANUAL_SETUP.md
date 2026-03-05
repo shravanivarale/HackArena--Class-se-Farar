@@ -216,23 +216,25 @@ This makes the 5-Layer Accuracy Engine work. Without it, Layer 3 (LLM) is skippe
    ```
 10. Replace with your Client ID and save
 
-### 5.3 Setu Account Aggregator (Bank Data — Sandbox Mode)
+### 5.3 Razorpay Payment Gateway (Payments & UPI)
 
-This fetches simulated bank transaction data.
+Razorpay handles all payments — split bill collections, UPI, cards, netbanking.
 
-1. Open **https://bridge.setu.co** in your browser
-2. Click **"Sign Up"** and create an account
-3. After login, go to **Products** → **Account Aggregator**
-4. Click **"Try Sandbox"** (completely free)
-5. You'll see a **Client ID** and **Client Secret**
+1. Open **https://dashboard.razorpay.com/** in your browser
+2. Click **"Sign Up"** → create an account (free, no documents needed for Test Mode)
+3. After login, you land on the Dashboard. Make sure **"Test Mode"** toggle is ON (top-left, orange banner)
+4. Go to **Settings** → **API Keys** → click **"Generate Test Key"**
+5. You will see:
+   - **Key Id** (starts with `rzp_test_`)
+   - **Key Secret** (shown only once — copy it immediately!)
 6. Open `.env` and find:
    ```
-   SETU_CLIENT_ID=your_setu_client_id
-   SETU_CLIENT_SECRET=your_setu_client_secret
+   RAZORPAY_KEY_ID=your_razorpay_key_id
+   RAZORPAY_KEY_SECRET=your_razorpay_key_secret
    ```
-7. Replace with your values and save
+7. Paste your Key Id and Key Secret, then save
 
-> 💡 If you can't sign up for Setu right now, that's OK. The app will still work — it will just use mock transaction data instead of real bank data.
+> 💡 If you can't sign up for Razorpay right now, that's OK. The app will still work — it will use mock payment data and log payment link URLs to the console instead of creating real ones.
 
 ### 5.4 Firebase Cloud Messaging (Push Notifications — Optional)
 
@@ -253,7 +255,7 @@ Only needed if you want push notifications to work.
 |-----|-----------|------------------------|
 | **GROQ_API_KEY** | Recommended | Layer 3 LLM is skipped (Layers 1,2,4,5 still work) |
 | **WEB3AUTH_CLIENT_ID** | Optional | Login uses placeholder mode |
-| **SETU_CLIENT_ID/SECRET** | Optional | Uses mock bank data |
+| **RAZORPAY_KEY_ID/SECRET** | Optional | Uses mock payment links |
 | **FCM_SERVER_KEY** | Optional | No push notifications |
 | Everything else | No change needed | Default values work for local dev |
 
@@ -837,6 +839,137 @@ npm run dev
 ```
 
 Navigate to **SplitSync** or **Pools** from the sidebar.
+
+---
+
+## 14. Razorpay Integration — Detailed Setup
+
+> This section covers the full Razorpay setup for payments, SplitSync bill collection, and bank connections.
+
+### A. Create a Razorpay Account
+
+1. Go to **https://razorpay.com/** and click **Sign Up**
+2. Use your email and phone number — no business documents needed for Test Mode
+3. After verifying your email, you land on the **Razorpay Dashboard**
+
+### B. Enable Test Mode
+
+1. On the Dashboard, look at the **top-left corner**
+2. You'll see a toggle that says **"Test Mode"** with an orange banner — make sure it's **ON**
+3. In Test Mode, no real money is charged. You can use test card numbers and UPI IDs
+
+### C. Generate API Keys
+
+1. Go to **Settings** → **API Keys**
+2. Click **"Generate Test Key"**
+3. A popup shows:
+   - **Key Id**: looks like `rzp_test_aBcDeFgH12345` — copy this
+   - **Key Secret**: looks like `xYzAbCdEfGhIjK12345` — ⚠️ **copy immediately, it's shown only once!**
+4. If you lose the secret, delete the key and generate a new pair
+
+### D. Set Environment Variables
+
+Open the `.env` file in the project root and set these three values:
+
+```env
+# Razorpay Payment Gateway
+RAZORPAY_KEY_ID=rzp_test_aBcDeFgH12345
+RAZORPAY_KEY_SECRET=xYzAbCdEfGhIjK12345
+RAZORPAY_WEBHOOK_SECRET=your_webhook_secret_here
+```
+
+> The `RAZORPAY_WEBHOOK_SECRET` is optional for local development. It's only needed if you set up webhooks (see section G).
+
+### E. Install Dependencies
+
+Both the **transaction-ingestion** and **gamification-service** use the Razorpay Node SDK.
+
+```powershell
+# Transaction Ingestion Service
+cd backend\services\transaction-ingestion
+npm install
+
+# Gamification Service (SplitSync uses Razorpay payment links)
+cd ..\gamification-service
+npm install
+```
+
+### F. Test That It Works
+
+Start the transaction-ingestion service:
+
+```powershell
+cd backend\services\transaction-ingestion
+npm run dev
+```
+
+Then in another terminal, test creating a connection:
+
+```powershell
+# This should return a Razorpay order ID
+Invoke-RestMethod -Uri "http://localhost:3003/transactions/connections" `
+  -Method POST `
+  -ContentType "application/json" `
+  -Body '{"userId": "test-user-123", "phone": "+919876543210"}'
+```
+
+Expected response (with Test Mode keys):
+```json
+{
+  "success": true,
+  "data": {
+    "connectionId": "some-uuid",
+    "razorpayOrderId": "order_...",
+    "razorpayKeyId": "rzp_test_...",
+    "amount": 100,
+    "currency": "INR"
+  }
+}
+```
+
+If you see `razorpayOrderId: "order_mock_..."` it means the keys are not set — the app is running in mock mode (still works, just no real Razorpay calls).
+
+### G. Webhooks (Optional — For Production)
+
+Webhooks let Razorpay notify your server when a payment succeeds/fails.
+
+1. In the Razorpay Dashboard, go to **Settings** → **Webhooks**
+2. Click **"Add New Webhook"**
+3. URL: `https://your-domain.com/api/payments/webhook` (use ngrok for local testing)
+4. Secret: enter a strong random string, then put it in your `.env` as `RAZORPAY_WEBHOOK_SECRET`
+5. Events to select:
+   - `payment.authorized`
+   - `payment.captured`
+   - `payment.failed`
+   - `payment_link.paid`
+6. Click **Create Webhook**
+
+### H. Test Card Numbers (for Checkout testing)
+
+| Card Number | Bank | Result |
+|-------------|------|--------|
+| `4111 1111 1111 1111` | Any | Success |
+| `5267 3181 8797 5449` | Any | Success |
+| `4000 0000 0000 0002` | Any | Failure |
+
+- **Expiry**: any future date (e.g., `12/35`)
+- **CVV**: any 3 digits (e.g., `123`)
+
+### I. Test UPI IDs
+
+| UPI ID | Result |
+|--------|--------|
+| `success@razorpay` | Payment succeeds |
+| `failure@razorpay` | Payment fails |
+
+### J. What Razorpay Replaces
+
+| Before (Setu) | After (Razorpay) | What It Does |
+|---------------|-----------------|--------------|
+| `SetuIntegrationService.ts` | `RazorpayService.ts` | Bank connection + order creation |
+| `SETU_CLIENT_ID` / `SETU_CLIENT_SECRET` | `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | API authentication |
+| UPI deep links (`upi://pay?...`) | Razorpay Payment Links (`https://rzp.io/...`) | SplitSync payment collection |
+| Setu consent flow | Razorpay Checkout / Payment Links | Payment initiation |
 
 ---
 

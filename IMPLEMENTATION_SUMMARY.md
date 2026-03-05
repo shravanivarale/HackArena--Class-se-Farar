@@ -223,7 +223,7 @@ Overall Progress:             ██░░░░░░░░░░░░░░�
 
 ### Short-term (Next week)
 3. **Transaction Ingestion Service** (Task 5.1-5.8)
-   - Setu API integration
+   - Razorpay payment integration
    - Transaction normalization pipeline
    - PII tokenization
    - SQS event publishing
