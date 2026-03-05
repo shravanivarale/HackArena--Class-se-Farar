@@ -5,15 +5,15 @@
 
 ## Team Details
 
-- **Team Name:**
-- **Members:**
-- **Domain:**
+- **Team Name: Class se farar**
+- **Members: Aditya Yadav, Shravani Varale, Tejas Raut**
+- **Domain:Fintech & Money Management**
 
 ---
 
 ## Project
 
-**Problem:** 
+**Problem:VitalScore Finance-Move beyond just tracking. Build an app that gamifies savings by providing a "Financial Vitality Score" based on the ratio of necessities to discretionary spending.** 
 
 **Solution:** 
 
