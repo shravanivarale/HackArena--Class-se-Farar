@@ -1,11 +1,13 @@
 """
 routes.py — Flask route definitions for the Blockchain Integration Service.
 
-Implements all 10 blockchain endpoints matching the existing API contract:
+Implements all blockchain endpoints matching the existing API contract:
     - NFT: mint, update, get metadata
     - Escrow: lock, release
     - Squad Treasury: create, deposit, distribute
     - Token: balance, issue
+    - SplitSync: create, record_payment, cancel, state
+    - FundingPool: create, join, deposit, early_withdraw, distribute, close, state
 """
 
 from flask import Blueprint, request, jsonify
@@ -14,6 +16,8 @@ from services.nft_service import NFTService
 from services.escrow_service import EscrowService
 from services.treasury_service import TreasuryService
 from services.token_service import TokenService
+from services.splitsync_service import SplitSyncService
+from services.funding_pool_service import FundingPoolService
 from services.queue_service import blockchain_queue
 
 blockchain_bp = Blueprint("blockchain", __name__, url_prefix="/blockchain")
@@ -330,4 +334,255 @@ def queue_status():
         return success_response(stats)
     except Exception as e:
         logger.error(f"Queue status error: {e}")
+        return error_response(str(e))
+
+
+# ─────────────────────────────────────────────
+# SplitSync Endpoints
+# ─────────────────────────────────────────────
+
+@blockchain_bp.route("/splitsync/create", methods=["POST"])
+def create_split_contract():
+    """POST /blockchain/splitsync/create — Deploy SplitSync contract."""
+    try:
+        data = request.get_json()
+        required = ["splitId", "payerAddress", "totalAmount", "participantCount", "deadline"]
+        missing = [f for f in required if f not in data]
+        if missing:
+            return error_response(
+                f"Missing required fields: {', '.join(missing)}",
+                "VALIDATION_ERROR",
+                400,
+            )
+
+        result = SplitSyncService.create_split(
+            split_id=data["splitId"],
+            payer_address=data["payerAddress"],
+            total_amount=int(data["totalAmount"]),
+            participant_count=int(data["participantCount"]),
+            deadline_timestamp=int(data["deadline"]),
+        )
+
+        if result.get("success"):
+            return success_response(result, 201)
+        else:
+            return error_response(
+                result.get("error", "Split contract creation failed"),
+                "SPLIT_CREATE_FAILED",
+                500,
+            )
+    except Exception as e:
+        logger.error(f"SplitSync create error: {e}")
+        return error_response(str(e))
+
+
+@blockchain_bp.route("/splitsync/<int:app_id>/record_payment", methods=["POST"])
+def record_split_payment(app_id):
+    """POST /blockchain/splitsync/:appId/record_payment — Record participant payment."""
+    try:
+        data = request.get_json()
+        if not data or "participantAddress" not in data:
+            return error_response("Missing participantAddress", "VALIDATION_ERROR", 400)
+
+        result = SplitSyncService.record_payment(
+            app_id=app_id,
+            participant_address=data["participantAddress"],
+        )
+
+        if result.get("success"):
+            return success_response(result)
+        else:
+            return error_response(
+                result.get("error", "Payment recording failed"),
+                "PAYMENT_RECORD_FAILED",
+                500,
+            )
+    except Exception as e:
+        logger.error(f"SplitSync record_payment error: {e}")
+        return error_response(str(e))
+
+
+@blockchain_bp.route("/splitsync/<int:app_id>/cancel", methods=["POST"])
+def cancel_split(app_id):
+    """POST /blockchain/splitsync/:appId/cancel — Cancel split."""
+    try:
+        result = SplitSyncService.cancel_split(app_id=app_id)
+        if result.get("success"):
+            return success_response(result)
+        else:
+            return error_response(result.get("error", "Cancel failed"), "CANCEL_FAILED", 500)
+    except Exception as e:
+        logger.error(f"SplitSync cancel error: {e}")
+        return error_response(str(e))
+
+
+@blockchain_bp.route("/splitsync/<int:app_id>/state", methods=["GET"])
+def get_split_state(app_id):
+    """GET /blockchain/splitsync/:appId/state — Get on-chain split state."""
+    try:
+        result = SplitSyncService.get_split_state(app_id=app_id)
+        return success_response(result)
+    except Exception as e:
+        logger.error(f"SplitSync state error: {e}")
+        return error_response(str(e))
+
+
+# ─────────────────────────────────────────────
+# Funding Pool Endpoints
+# ─────────────────────────────────────────────
+
+@blockchain_bp.route("/pool/create", methods=["POST"])
+def create_funding_pool():
+    """POST /blockchain/pool/create — Deploy FundingPool contract."""
+    try:
+        data = request.get_json()
+        required = ["poolId", "endTime"]
+        missing = [f for f in required if f not in data]
+        if missing:
+            return error_response(
+                f"Missing required fields: {', '.join(missing)}",
+                "VALIDATION_ERROR",
+                400,
+            )
+
+        result = FundingPoolService.create_pool(
+            pool_id=data["poolId"],
+            end_timestamp=int(data["endTime"]),
+            min_deposit_microalgos=int(data.get("minDeposit", 100_000)),
+        )
+
+        if result.get("success"):
+            return success_response(result, 201)
+        else:
+            return error_response(
+                result.get("error", "Pool creation failed"),
+                "POOL_CREATE_FAILED",
+                500,
+            )
+    except Exception as e:
+        logger.error(f"FundingPool create error: {e}")
+        return error_response(str(e))
+
+
+@blockchain_bp.route("/pool/<int:app_id>/join", methods=["POST"])
+def join_funding_pool(app_id):
+    """POST /blockchain/pool/:appId/join — Member joins the pool."""
+    try:
+        data = request.get_json()
+        if not data or "memberAddress" not in data:
+            return error_response("Missing memberAddress", "VALIDATION_ERROR", 400)
+
+        result = FundingPoolService.join_pool(
+            app_id=app_id,
+            member_address=data["memberAddress"],
+        )
+
+        if result.get("success"):
+            return success_response(result)
+        else:
+            return error_response(result.get("error", "Join failed"), "JOIN_FAILED", 500)
+    except Exception as e:
+        logger.error(f"FundingPool join error: {e}")
+        return error_response(str(e))
+
+
+@blockchain_bp.route("/pool/<int:app_id>/deposit", methods=["POST"])
+def deposit_to_pool(app_id):
+    """POST /blockchain/pool/:appId/deposit — Deposit funds into pool."""
+    try:
+        data = request.get_json()
+        required = ["memberAddress", "amount"]
+        missing = [f for f in required if f not in data]
+        if missing:
+            return error_response(
+                f"Missing required fields: {', '.join(missing)}",
+                "VALIDATION_ERROR",
+                400,
+            )
+
+        result = FundingPoolService.deposit(
+            app_id=app_id,
+            member_address=data["memberAddress"],
+            amount_microalgos=int(data["amount"]),
+        )
+
+        if result.get("success"):
+            return success_response(result)
+        else:
+            return error_response(result.get("error", "Deposit failed"), "DEPOSIT_FAILED", 500)
+    except Exception as e:
+        logger.error(f"FundingPool deposit error: {e}")
+        return error_response(str(e))
+
+
+@blockchain_bp.route("/pool/<int:app_id>/withdraw", methods=["POST"])
+def early_withdraw_from_pool(app_id):
+    """POST /blockchain/pool/:appId/withdraw — Early withdrawal (loses 10%)."""
+    try:
+        data = request.get_json()
+        if not data or "memberAddress" not in data:
+            return error_response("Missing memberAddress", "VALIDATION_ERROR", 400)
+
+        result = FundingPoolService.early_withdraw(
+            app_id=app_id,
+            member_address=data["memberAddress"],
+        )
+
+        if result.get("success"):
+            return success_response(result)
+        else:
+            return error_response(result.get("error", "Withdrawal failed"), "WITHDRAW_FAILED", 500)
+    except Exception as e:
+        logger.error(f"FundingPool withdraw error: {e}")
+        return error_response(str(e))
+
+
+@blockchain_bp.route("/pool/<int:app_id>/distribute", methods=["POST"])
+def distribute_pool(app_id):
+    """POST /blockchain/pool/:appId/distribute — Distribute to remaining member."""
+    try:
+        data = request.get_json()
+        if not data or "memberAddress" not in data:
+            return error_response("Missing memberAddress", "VALIDATION_ERROR", 400)
+
+        result = FundingPoolService.distribute(
+            app_id=app_id,
+            member_address=data["memberAddress"],
+        )
+
+        if result.get("success"):
+            return success_response(result)
+        else:
+            return error_response(
+                result.get("error", "Distribution failed"),
+                "DISTRIBUTION_FAILED",
+                500,
+            )
+    except Exception as e:
+        logger.error(f"FundingPool distribute error: {e}")
+        return error_response(str(e))
+
+
+@blockchain_bp.route("/pool/<int:app_id>/close", methods=["POST"])
+def close_funding_pool(app_id):
+    """POST /blockchain/pool/:appId/close — Close the pool."""
+    try:
+        result = FundingPoolService.close_pool(app_id=app_id)
+        if result.get("success"):
+            return success_response(result)
+        else:
+            return error_response(result.get("error", "Close failed"), "CLOSE_FAILED", 500)
+    except Exception as e:
+        logger.error(f"FundingPool close error: {e}")
+        return error_response(str(e))
+
+
+@blockchain_bp.route("/pool/<int:app_id>/state", methods=["GET"])
+def get_pool_state(app_id):
+    """GET /blockchain/pool/:appId/state — Get on-chain pool state."""
+    try:
+        result = FundingPoolService.get_pool_state(app_id=app_id)
+        return success_response(result)
+    except Exception as e:
+        logger.error(f"FundingPool state error: {e}")
         return error_response(str(e))

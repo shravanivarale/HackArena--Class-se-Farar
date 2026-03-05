@@ -569,4 +569,94 @@ docker-compose up -d
 
 ---
 
+## 13. SplitSync & Funding Pool Setup
+
+These two features were added on the `feature-splitsync-pool` branch.
+
+### A. Database Migrations
+
+Run the two new schemas against your PostgreSQL database:
+
+```bash
+# From project root
+psql -U vitalscore -d vitalscore_dev -f backend/database/schemas/008_splitsync.sql
+psql -U vitalscore -d vitalscore_dev -f backend/database/schemas/009_funding_pool.sql
+```
+
+### B. Smart Contract Compilation
+
+```bash
+cd blockchain/contracts
+
+# Install PyTeal (if not already)
+pip install pyteal py-algorand-sdk
+
+# Compile the contracts
+python SplitSync.py     # outputs splitsync_approval.teal & splitsync_clear.teal
+python FundingPool.py   # outputs fundingpool_approval.teal & fundingpool_clear.teal
+```
+
+### C. Blockchain Service (Python)
+
+No extra setup needed — the new endpoints are already registered in `routes.py`.
+Just restart the blockchain service:
+
+```bash
+cd backend/services/blockchain-service-python
+pip install -r requirements.txt
+python app.py   # runs on port 3006
+```
+
+### D. WhatsApp Notifications (Twilio — Optional)
+
+SplitSync sends payment requests via WhatsApp. If Twilio is not configured,
+notifications fall back to console logging (no crash).
+
+1. Sign up at [twilio.com](https://www.twilio.com/) (free trial works)
+2. Activate the **WhatsApp Sandbox**: Twilio Console → Messaging → Try it Out → WhatsApp
+3. Add these env vars to the **gamification-service** `.env`:
+
+```env
+TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_AUTH_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
+```
+
+### E. Gamification Service
+
+```bash
+cd backend/services/gamification-service
+npm install          # installs twilio + other deps
+npm run dev          # runs on port 3005
+```
+
+### F. New API Endpoints
+
+| Feature | Method | Endpoint | Purpose |
+|---------|--------|----------|---------|
+| SplitSync | POST | `/gamification/splits` | Create a new split |
+| SplitSync | POST | `/gamification/splits/:id/payments/:pid` | Record a payment |
+| SplitSync | GET | `/gamification/splits/user/:userId` | User's splits |
+| SplitSync | POST | `/gamification/splits/:id/remind` | Send reminders |
+| Pools | POST | `/gamification/pools` | Create a pool |
+| Pools | POST | `/gamification/pools/:id/join` | Join a pool |
+| Pools | POST | `/gamification/pools/:id/deposit` | Deposit (90/10 split) |
+| Pools | POST | `/gamification/pools/:id/withdraw` | Early withdraw (lose risk) |
+| Pools | POST | `/gamification/pools/:id/distribute` | Distribute at maturity |
+| Pools | GET | `/gamification/pools/:id` | Pool details |
+
+### G. Frontend
+
+Both pages are already wired into the sidebar. Start the frontend normally:
+
+```bash
+cd frontend/web
+npm install
+npm run dev
+```
+
+Navigate to **SplitSync** or **Pools** from the sidebar.
+
+---
+
 *VitalScore Finance v4.0 | Honest Blockchain Usage • India-First • Free-Tier Verified • 99% Accuracy Architecture*

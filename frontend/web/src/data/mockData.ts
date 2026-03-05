@@ -202,8 +202,6 @@ export const getCategoryColor = (category: string): string => {
     };
     return map[category] || '#8b9abe';
 };
-<<<<<<< HEAD
-=======
 
 // ─── SubVampire Ghost Subscriptions (FM-02) ──────────────────
 export const ghostSubscriptions = [
@@ -308,4 +306,52 @@ export const splitSyncStats = {
     splitStreak: 5,
 };
 
->>>>>>> 663acad6f0533edac3f2dff1c2a5ae88ffde714d
+// ─── Funding Pool Mock Data ──────────────────────────────────
+export const fundingPools = [
+    {
+        id: 'pool_1',
+        name: 'College Friends Savings',
+        status: 'ACTIVE' as const,
+        creator: 'Arjun S.',
+        memberCount: 5,
+        maxMembers: 10,
+        totalDeposited: 25000,
+        riskPool: 1200,
+        minDeposit: 500,
+        durationDays: 30,
+        startTime: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+        endTime: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString(),
+        members: [
+            { name: 'Arjun S.', avatar: 'AS', deposited: 5000, safe: 4500, risk: 500, status: 'ACTIVE' as const },
+            { name: 'Priya M.', avatar: 'PM', deposited: 8000, safe: 7200, risk: 800, status: 'ACTIVE' as const },
+            { name: 'Rohan K.', avatar: 'RK', deposited: 4000, safe: 3600, risk: 400, status: 'ACTIVE' as const },
+            { name: 'Sneha T.', avatar: 'ST', deposited: 6000, safe: 5400, risk: 600, status: 'ACTIVE' as const },
+            { name: 'Karan J.', avatar: 'KJ', deposited: 2000, safe: 1800, risk: 200, status: 'WITHDRAWN' as const },
+        ],
+        myDeposit: 5000,
+        mySafe: 4500,
+        myRisk: 500,
+    },
+    {
+        id: 'pool_2',
+        name: 'Office Diwali Fund',
+        status: 'COMPLETED' as const,
+        creator: 'Priya M.',
+        memberCount: 8,
+        maxMembers: 10,
+        totalDeposited: 40000,
+        riskPool: 3000,
+        minDeposit: 1000,
+        durationDays: 60,
+        startTime: new Date(Date.now() - 65 * 24 * 60 * 60 * 1000).toISOString(),
+        endTime: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+        members: [
+            { name: 'Priya M.', avatar: 'PM', deposited: 6000, safe: 5400, risk: 600, status: 'COMPLETED' as const, payout: 6500 },
+            { name: 'Amit D.', avatar: 'AD', deposited: 5000, safe: 4500, risk: 500, status: 'COMPLETED' as const, payout: 5420 },
+            { name: 'Neha R.', avatar: 'NR', deposited: 3000, safe: 2700, risk: 300, status: 'WITHDRAWN' as const, payout: 2700 },
+        ],
+        myDeposit: 5000,
+        mySafe: 4500,
+        myRisk: 500,
+    },
+];

@@ -7,6 +7,7 @@ import logger from './config/logger';
 import gamificationRoutes from './routes/gamificationRoutes';
 import cron from 'node-cron';
 import pool from './config/database';
+import { FundingPoolService } from './services/FundingPoolService';
 
 dotenv.config();
 
@@ -39,6 +40,16 @@ const server = app.listen(PORT, () => {
 cron.schedule('0 0 * * 0', () => { // Every Sunday at midnight
     logger.info('Running weekly leaderboard and challenge resolution triggers...');
     // Logic to lock previous week's challenges, calculate yields, mint badges.
+});
+
+// Check for expired funding pools every hour
+cron.schedule('0 * * * *', async () => {
+    logger.info('Checking for expired funding pools...');
+    try {
+        await FundingPoolService.processExpiredPools();
+    } catch (err) {
+        logger.error('Failed to process expired pools', err);
+    }
 });
 
 process.on('SIGTERM', () => {

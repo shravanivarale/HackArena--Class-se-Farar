@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, ArrowLeftRight, Trophy, Users, Award, Shield, Settings, Zap } from 'lucide-react'
+import { LayoutDashboard, ArrowLeftRight, Trophy, Users, Award, Shield, Settings, Zap, Split, Wallet } from 'lucide-react'
 import { currentScore, getBandConfig } from '../../data/mockData'
 
 const nav = [
@@ -9,6 +9,8 @@ const nav = [
     { to: '/squads', icon: Users, label: 'Squads' },
     { to: '/league', icon: Award, label: 'League' },
     { to: '/nft', icon: Shield, label: 'My NFT' },
+    { to: '/splitsync', icon: Split, label: 'SplitSync' },
+    { to: '/pools', icon: Wallet, label: 'Pools' },
     { to: '/settings', icon: Settings, label: 'Settings' },
 ]
 

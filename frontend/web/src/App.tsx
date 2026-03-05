@@ -8,6 +8,8 @@ import Squads from './pages/Squads'
 import League from './pages/League'
 import NFT from './pages/NFT'
 import Settings from './pages/Settings'
+import SplitSync from './pages/SplitSync'
+import FundingPool from './pages/FundingPool'
 
 export default function App() {
     return (
@@ -24,6 +26,8 @@ export default function App() {
                         <Route path="/squads" element={<Squads />} />
                         <Route path="/league" element={<League />} />
                         <Route path="/nft" element={<NFT />} />
+                        <Route path="/splitsync" element={<SplitSync />} />
+                        <Route path="/pools" element={<FundingPool />} />
                         <Route path="/settings" element={<Settings />} />
                     </Routes>
                 </main>
