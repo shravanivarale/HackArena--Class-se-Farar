@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis } from 'recharts'
 import HeartbeatVisualizer from '../components/Dashboard/HeartbeatVisualizer'
-import { currentScore, scoreHistory, scoreForecast, spendingBreakdown, recentTransactions, getCategoryColor, currentUser, getBandConfig, ghostSubscriptions, ghostSummary, smartNudges } from '../data/mockData'
-import { TrendingUp, Flame, Zap, ArrowUpRight, Ghost, AlertTriangle, Check, X } from 'lucide-react'
+import { scoreHistory, scoreForecast, getBandConfig, smartNudges } from '../data/mockData'
+import { useApp } from '../context/AppContext'
+import { TrendingUp, Flame, Zap, ArrowUpRight, Ghost, AlertTriangle, Check, X, ChevronUp, ChevronDown, Clock } from 'lucide-react'
 
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null
@@ -70,7 +71,7 @@ export default function Dashboard() {
             const timeAgo = mins < 60 ? `${mins}m ago` : mins < 1440 ? `${Math.floor(mins / 60)}h ago` : `${Math.floor(mins / 1440)}d ago`
             return { transactionId: tx.id, merchantName: tx.description, amount: tx.amount, suggested, conf, alts, timeAgo }
         }),
-    [transactions])
+        [transactions])
 
     // ─── SubVampire: active ghosts only ───
     const activeGhosts = ghosts.filter(g => g.status === 'DETECTED')

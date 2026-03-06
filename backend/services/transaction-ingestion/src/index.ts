@@ -10,11 +10,11 @@ import transactionRoutes from './routes/transactionRoutes';
 dotenv.config({ path: path.resolve(__dirname, '..', '..', '..', '..', '.env') });
 
 const app = express();
-const PORT = process.env.PORT || 3003;
+const PORT = process.env.TRANSACTION_PORT || 3003;
 
 app.use(helmet());
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || '*',
+    origin: process.env.CORS_ORIGIN?.split(',') || '*',
 }));
 app.use(express.json());
 

@@ -13,7 +13,8 @@ import logger from '../config/logger';
 // Twilio config — loaded from environment
 const TWILIO_SID = process.env.TWILIO_ACCOUNT_SID || '';
 const TWILIO_AUTH = process.env.TWILIO_AUTH_TOKEN || '';
-const TWILIO_WHATSAPP_FROM = process.env.TWILIO_WHATSAPP_FROM || 'whatsapp:+14155238886';
+let TWILIO_WHATSAPP_FROM = process.env.TWILIO_WHATSAPP_FROM || '+14155238886';
+TWILIO_WHATSAPP_FROM = TWILIO_WHATSAPP_FROM.startsWith('whatsapp:') ? TWILIO_WHATSAPP_FROM : `whatsapp:${TWILIO_WHATSAPP_FROM}`;
 
 interface WhatsAppMessage {
     to: string;          // Phone number with country code (e.g., +919876543210)

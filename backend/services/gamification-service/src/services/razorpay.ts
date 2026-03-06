@@ -1,16 +1,19 @@
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 
-const isMockMode = !process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET;
+function getRazorpayClient(): { client: Razorpay | null; isMock: boolean } {
+    const isMock = !process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET;
 
-let razorpay: Razorpay | null = null;
-if (!isMockMode) {
-    razorpay = new Razorpay({
+    if (isMock) {
+        return { client: null, isMock: true };
+    }
+
+    const client = new Razorpay({
         key_id: process.env.RAZORPAY_KEY_ID!,
         key_secret: process.env.RAZORPAY_KEY_SECRET!,
     });
-} else {
-    console.log('[Razorpay] Running in MOCK mode — no API keys configured');
+
+    return { client, isMock: false };
 }
 
 /**
@@ -26,9 +29,10 @@ export async function createSplitPaymentLink(params: {
     description: string;
     expireBy?: number;      // unix timestamp
 }): Promise<{ linkId: string; shortUrl: string }> {
+    const { client, isMock } = getRazorpayClient();
     const amountPaise = Math.round(params.amount * 100);
 
-    if (isMockMode) {
+    if (isMock || !client) {
         const mockId = `plink_mock_${Date.now()}`;
         console.log(`[MOCK Razorpay] Payment link: ₹${params.amount} for ${params.participantName} (split ${params.splitId})`);
         return {
@@ -62,7 +66,7 @@ export async function createSplitPaymentLink(params: {
         linkPayload.expire_by = params.expireBy;
     }
 
-    const link = await (razorpay as any).paymentLink.create(linkPayload);
+    const link = await (client as any).paymentLink.create(linkPayload);
 
     return {
         linkId: link.id,

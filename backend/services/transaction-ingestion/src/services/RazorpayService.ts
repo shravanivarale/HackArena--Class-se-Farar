@@ -2,16 +2,20 @@ import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import logger from '../config/logger';
 
-const isMockMode = !process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET;
+function getRazorpayClient(): { client: Razorpay | null; isMock: boolean } {
+    const isMock = !process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET;
 
-let razorpay: Razorpay | null = null;
-if (!isMockMode) {
-    razorpay = new Razorpay({
+    if (isMock) {
+        logger.info('[Razorpay] Running in MOCK mode — no API keys configured');
+        return { client: null, isMock: true };
+    }
+
+    const client = new Razorpay({
         key_id: process.env.RAZORPAY_KEY_ID!,
         key_secret: process.env.RAZORPAY_KEY_SECRET!,
     });
-} else {
-    console.log('[Razorpay] Running in MOCK mode — no API keys configured');
+
+    return { client, isMock: false };
 }
 
 export class RazorpayService {
@@ -25,7 +29,9 @@ export class RazorpayService {
         receipt: string,
         notes: Record<string, string> = {}
     ): Promise<{ orderId: string; amount: number; currency: string; status: string }> {
-        if (isMockMode) {
+        const { client, isMock } = getRazorpayClient();
+
+        if (isMock || !client) {
             logger.info(`[MOCK] Creating Razorpay order: ₹${amount / 100} ${currency}, receipt=${receipt}`);
             return {
                 orderId: `order_mock_${Date.now()}`,
@@ -36,7 +42,7 @@ export class RazorpayService {
         }
 
         try {
-            const order = await razorpay.orders.create({
+            const order = await client.orders.create({
                 amount,         // Razorpay expects amount in paise
                 currency,
                 receipt,
@@ -64,7 +70,9 @@ export class RazorpayService {
         paymentId: string,
         signature: string
     ): boolean {
-        if (isMockMode) {
+        const { isMock } = getRazorpayClient();
+
+        if (isMock) {
             logger.info(`[MOCK] Verifying payment: orderId=${orderId}, paymentId=${paymentId}`);
             return true;
         }
@@ -93,7 +101,9 @@ export class RazorpayService {
         callbackUrl?: string;
         expireBy?: number;
     }): Promise<{ linkId: string; shortUrl: string; amount: number; status: string }> {
-        if (isMockMode) {
+        const { client, isMock } = getRazorpayClient();
+
+        if (isMock || !client) {
             const mockId = `plink_mock_${Date.now()}`;
             logger.info(`[MOCK] Creating Razorpay payment link: ₹${params.amount / 100} for ${params.customerName}`);
             return {
@@ -128,7 +138,7 @@ export class RazorpayService {
                 linkPayload.expire_by = params.expireBy;
             }
 
-            const link = await (razorpay as any).paymentLink.create(linkPayload);
+            const link = await (client as any).paymentLink.create(linkPayload);
 
             logger.info(`Razorpay payment link created: ${link.id} → ${link.short_url}`);
             return {
@@ -147,7 +157,9 @@ export class RazorpayService {
      * Fetch payment details by payment ID.
      */
     static async fetchPayment(paymentId: string): Promise<any> {
-        if (isMockMode) {
+        const { client, isMock } = getRazorpayClient();
+
+        if (isMock || !client) {
             logger.info(`[MOCK] Fetching payment: ${paymentId}`);
             return {
                 id: paymentId,
@@ -159,7 +171,7 @@ export class RazorpayService {
         }
 
         try {
-            const payment = await razorpay.payments.fetch(paymentId);
+            const payment = await client.payments.fetch(paymentId);
             return payment;
         } catch (error) {
             logger.error(`Failed to fetch payment ${paymentId}`, error);

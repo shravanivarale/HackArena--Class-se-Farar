@@ -45,6 +45,8 @@ export default function App() {
                         <Route path="/challenges" element={<Challenges />} />
                         <Route path="/splitsync" element={<SplitSync />} />
                         <Route path="/pools" element={<FundingPool />} />
+                        <Route path="/profile" element={<Profile />} />
+                        <Route path="/proofs" element={<BlockchainProofs />} />
                     </Routes>
                 </main>
             </div>

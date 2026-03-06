@@ -3,7 +3,7 @@ import { Split, Send, CheckCircle, Clock, AlertCircle, Plus, Bell, MessageCircle
 import { useApp } from '../context/AppContext'
 
 export default function SplitSync() {
-    const { splits, createSplit, markSplitPaid, sendSplitReminder, user, friends, addFriend, removeFriend } = useApp()
+    const { splits, createSplit, markSplitPaid, sendSplitReminder, user, friends, addFriend, removeFriend, addNotification } = useApp()
 
     const [showCreate, setShowCreate] = useState(false)
     const [description, setDescription] = useState('')
@@ -20,7 +20,7 @@ export default function SplitSync() {
     // Sort friends by frequency
     const sortedFriends = useMemo(() =>
         [...friends].sort((a, b) => b.splitCount - a.splitCount),
-    [friends])
+        [friends])
 
     const addParticipant = () => setParticipants([...participants, { name: '', phone: '', amount: '' }])
 
@@ -75,9 +75,13 @@ export default function SplitSync() {
     }
 
     const handleRemind = async (splitId: string, participantName: string, phone?: string) => {
+        if (!phone) {
+            addNotification({ type: 'split', title: 'Missing Phone Number', body: `Please add a phone number for ${participantName} to send a WhatsApp reminder.` })
+            return
+        }
         setReminding(`${splitId}-${participantName}`)
         try {
-            await sendSplitReminder(splitId, participantName, phone || '')
+            await sendSplitReminder(splitId, participantName, phone)
         } finally {
             setReminding(null)
         }

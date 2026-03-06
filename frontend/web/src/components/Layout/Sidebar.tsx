@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import { LayoutDashboard, ArrowLeftRight, Trophy, Zap, Split, Wallet } from 'lucide-react'
 import { currentScore, getBandConfig } from '../../data/mockData'
+import { useApp } from '../../context/AppContext'
 
 const nav = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },

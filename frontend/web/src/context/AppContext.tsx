@@ -246,7 +246,7 @@ async function algorandCreateEscrow(stakeAmount: number): Promise<{ txnId: strin
 }
 
 // ── WhatsApp helper (Twilio) ─────────────────────────────────────
-async function twilioWhatsApp(phone: string, message: string): Promise<boolean> {
+async function twilioWhatsApp(phone: string, message: string): Promise<{ success: boolean; error?: string }> {
     // Try real Twilio API via backend
     try {
         const response = await fetch('http://localhost:3005/whatsapp/send', {
@@ -254,9 +254,11 @@ async function twilioWhatsApp(phone: string, message: string): Promise<boolean> 
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ to: phone, message }),
         })
-        if (response.ok) return true
-    } catch {
-        // Backend not available
+        const data = await response.json()
+        if (response.ok) return { success: true }
+        if (data.error) return { success: false, error: data.error }
+    } catch (e: any) {
+        return { success: false, error: e.message || 'Network error' }
     }
     // Fallback — try direct Twilio if env vars are set
     const sid = import.meta.env.VITE_TWILIO_SID
@@ -276,10 +278,14 @@ async function twilioWhatsApp(phone: string, message: string): Promise<boolean> 
                     Body: message,
                 }),
             })
-            return resp.ok
-        } catch { /* continue to fallback */ }
+            const data = await resp.json()
+            if (resp.ok) return { success: true }
+            return { success: false, error: data.message || 'Direct Twilio failed' }
+        } catch (e: any) {
+            return { success: false, error: e.message }
+        }
     }
-    return false
+    return { success: false, error: 'No backend responding' }
 }
 
 // ── Score calculator ─────────────────────────────────────────────
@@ -584,8 +590,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         for (const p of split.participants) {
             if (p.phone) {
                 const msg = `💰 VitalScore SplitSync: You owe ₹${p.amount} for "${split.description}" to ${split.payer}. Pay now to earn ${split.xpRewardPerPerson} XP!`
-                twilioWhatsApp(p.phone, msg).then(sent => {
-                    if (sent) addNotification({ type: 'whatsapp', title: 'WhatsApp sent', body: `Notification sent to ${p.name} (${p.phone})` })
+                twilioWhatsApp(p.phone, msg).then(res => {
+                    if (res.success) {
+                        addNotification({ type: 'whatsapp', title: 'WhatsApp sent', body: `Notification sent to ${p.name} (${p.phone})` })
+                    } else {
+                        addNotification({ type: 'split', title: `WhatsApp Failed (${p.name})`, body: res.error || 'Failed to send WhatsApp message' })
+                    }
                 })
             }
         }
@@ -624,11 +634,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (!participant) return
 
         const msg = `⏰ Reminder from VitalScore SplitSync: You owe ₹${participant.amount} for "${split.description}" to ${split.payer}. Pay now to earn ${split.xpRewardPerPerson} XP!`
-        const sent = await twilioWhatsApp(phone, msg)
+        const res = await twilioWhatsApp(phone, msg)
         addNotification({
-            type: 'whatsapp',
-            title: sent ? '📱 WhatsApp Reminder Sent' : '📱 Reminder Sent',
-            body: `Reminder sent to ${participantName}${sent ? ' via WhatsApp' : ' (WhatsApp unavailable — notification logged)'}`,
+            type: res.success ? 'whatsapp' : 'split',
+            title: res.success ? '📱 WhatsApp Reminder Sent' : '⚠️ WhatsApp Request Failed',
+            body: res.success
+                ? `Reminder sent to ${participantName} via WhatsApp`
+                : `Error: ${res.error || 'Failed to send'}`,
         })
     }, [splits, addNotification])
 

@@ -56,7 +56,7 @@ export async function classifyTransaction(txn: TransactionInput): Promise<Pipeli
     if (l1 && l1.confidence >= CONFIDENCE_THRESHOLD) {
         return buildResult(l1, attempts);
     }
-    if (l1 && (!bestResult || l1.confidence > bestResult.confidence)) {
+    if (l1) {
         bestResult = l1;
     }
 

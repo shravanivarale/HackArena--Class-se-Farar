@@ -10,10 +10,10 @@ import categorizationRoutes from './routes/categorizationRoutes';
 dotenv.config({ path: path.resolve(__dirname, '..', '..', '..', '..', '.env') });
 
 const app = express();
-const PORT = process.env.PORT || 3007;
+const PORT = process.env.AI_PORT || 3007;
 
 app.use(helmet());
-app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
+app.use(cors({ origin: process.env.CORS_ORIGIN?.split(',') || '*' }));
 app.use(express.json());
 
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200 });

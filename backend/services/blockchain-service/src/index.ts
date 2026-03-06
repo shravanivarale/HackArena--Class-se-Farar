@@ -10,10 +10,10 @@ import { checkAlgorandStatus } from './config/algorand';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3006;
+const PORT = process.env.BLOCKCHAIN_PORT || 3006;
 
 app.use(helmet());
-app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
+app.use(cors({ origin: process.env.CORS_ORIGIN?.split(',') || '*' }));
 app.use(express.json());
 
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });

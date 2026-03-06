@@ -10,12 +10,12 @@ import authRoutes from './routes/authRoutes';
 dotenv.config({ path: path.resolve(__dirname, '..', '..', '..', '..', '.env') });
 
 const app = express();
-const PORT = process.env.PORT || 3002;
+const PORT = process.env.AUTH_PORT || 3002;
 
 // Middleware
 app.use(helmet());
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || '*',
+    origin: process.env.CORS_ORIGIN?.split(',') || '*',
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));

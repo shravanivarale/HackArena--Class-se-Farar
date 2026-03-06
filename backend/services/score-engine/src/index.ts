@@ -13,11 +13,11 @@ import pool from './config/database';
 dotenv.config({ path: path.resolve(__dirname, '..', '..', '..', '..', '.env') });
 
 const app = express();
-const PORT = process.env.PORT || 3004;
+const PORT = process.env.SCORE_ENGINE_PORT || 3004;
 
 app.use(helmet());
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || '*',
+    origin: process.env.CORS_ORIGIN?.split(',') || '*',
 }));
 app.use(express.json());
 

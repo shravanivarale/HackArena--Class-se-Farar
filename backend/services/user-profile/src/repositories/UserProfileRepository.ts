@@ -15,7 +15,7 @@ import { LeagueService } from '../services/LeagueService';
 import logger from '../config/logger';
 
 export class UserProfileRepository {
-  constructor(private pool: Pool) {}
+  constructor(private pool: Pool) { }
 
   /**
    * Task 3.1.1: POST /users endpoint - Create new user profile
@@ -24,7 +24,7 @@ export class UserProfileRepository {
     data: CreateUserProfileDTO
   ): Promise<UserProfile> {
     const client = await this.pool.connect();
-    
+
     try {
       await client.query('BEGIN');
 
@@ -290,8 +290,8 @@ export class UserProfileRepository {
   async updateSettings(
     userId: string,
     settings: {
-      notificationPreferences?: Partial<NotificationPreferences>;
-      consentFlags?: Partial<ConsentFlags>;
+      notificationPreferences?: any;
+      consentFlags?: any;
     }
   ): Promise<any | null> {
     await this.updateUserProfile(userId, settings);
