@@ -1,19 +1,71 @@
-import { useState } from 'react'
-import { recentTransactions, getCategoryColor } from '../data/mockData'
-import { Search, Plus, Filter } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { useApp } from '../context/AppContext'
+import { Search, Plus } from 'lucide-react'
 
 const categories = ['All', 'Income', 'Essential', 'Discretionary', 'Savings']
 
+const CATEGORY_OPTIONS = [
+    'Essential.Groceries', 'Essential.Transportation', 'Essential.Bills', 'Essential.Housing',
+    'Essential.Healthcare', 'Essential.Education', 'Essential.Insurance', 'Essential.EMI',
+    'Discretionary.DiningOut', 'Discretionary.Shopping', 'Discretionary.Entertainment',
+    'Discretionary.Subscriptions', 'Discretionary.Travel', 'Discretionary.PersonalCare',
+    'Savings.Investment', 'Savings.EmergencyFund',
+]
+
+function getCategoryColor(cat: string) {
+    if (cat.startsWith('Essential')) return '#3b82f6'
+    if (cat.startsWith('Discretionary')) return '#f59e0b'
+    if (cat.startsWith('Savings')) return '#10b981'
+    return '#94a3b8'
+}
+
 export default function Transactions() {
+    const { transactions, addTransaction } = useApp()
     const [search, setSearch] = useState('')
     const [filter, setFilter] = useState('All')
     const [showAdd, setShowAdd] = useState(false)
 
-    const filtered = recentTransactions.filter(tx => {
+    // Add form state
+    const [formDesc, setFormDesc] = useState('')
+    const [formAmount, setFormAmount] = useState('')
+    const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0])
+    const [formCategory, setFormCategory] = useState('Discretionary.DiningOut')
+    const [formType, setFormType] = useState<'DEBIT' | 'CREDIT'>('DEBIT')
+
+    const filtered = transactions.filter(tx => {
         const matchSearch = tx.description.toLowerCase().includes(search.toLowerCase()) || tx.merchant.toLowerCase().includes(search.toLowerCase())
-        const matchFilter = filter === 'All' || tx.category.startsWith(filter)
+        const matchFilter = filter === 'All'
+            || (filter === 'Income' && tx.type === 'CREDIT')
+            || (filter !== 'Income' && tx.category.startsWith(filter))
         return matchSearch && matchFilter
     })
+
+    // Real-time computed totals
+    const totals = useMemo(() => {
+        const income = transactions.filter(t => t.type === 'CREDIT').reduce((s, t) => s + t.amount, 0)
+        const spend = transactions.filter(t => t.type === 'DEBIT').reduce((s, t) => s + t.amount, 0)
+        return { income, spend, net: income - spend }
+    }, [transactions])
+
+    // Today's expenses
+    const today = new Date().toISOString().split('T')[0]
+    const todayExpenses = transactions.filter(t => t.date === today && t.type === 'DEBIT')
+    const todayTotal = todayExpenses.reduce((s, t) => s + t.amount, 0)
+
+    const handleAdd = () => {
+        if (!formDesc || !formAmount || Number(formAmount) <= 0) return
+        addTransaction({
+            description: formDesc,
+            merchant: formDesc,
+            amount: Number(formAmount),
+            type: formType,
+            category: formType === 'CREDIT' ? 'Savings.Investment' : formCategory,
+            categoryLabel: formType === 'CREDIT' ? 'Income' : formCategory.split('.')[1],
+            date: formDate,
+        })
+        setFormDesc(''); setFormAmount(''); setFormDate(new Date().toISOString().split('T')[0]); setFormCategory('Discretionary.DiningOut'); setFormType('DEBIT')
+        setShowAdd(false)
+    }
 
     return (
         <div className="animate-fade-in">
@@ -24,6 +76,19 @@ export default function Transactions() {
                 </button>
             </div>
             <div className="page-subtitle">All your linked bank transactions, auto-categorized</div>
+
+            {/* Today's expenses banner */}
+            {todayExpenses.length > 0 && (
+                <div className="card" style={{ marginBottom: 16, padding: '14px 20px', border: '1px solid rgba(0,212,170,0.15)', background: 'rgba(0,212,170,0.04)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent-green)' }}>📅 Today's Expenses</span>
+                            <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 8 }}>{todayExpenses.length} transactions</span>
+                        </div>
+                        <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-primary)' }}>₹{todayTotal.toLocaleString()}</div>
+                    </div>
+                </div>
+            )}
 
             {/* Filters */}
             <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
@@ -44,12 +109,12 @@ export default function Transactions() {
                 </div>
             </div>
 
-            {/* Totals row */}
+            {/* Totals row — real-time computed */}
             <div className="grid-3" style={{ marginBottom: 20 }}>
                 {[
-                    { label: 'Total Income', value: '₹85,000', color: 'var(--accent-green)' },
-                    { label: 'Total Spend', value: '₹32,193', color: 'var(--accent-red)' },
-                    { label: 'Net Savings', value: '₹52,807', color: 'var(--accent-purple)' },
+                    { label: 'Total Income', value: `₹${totals.income.toLocaleString()}`, color: 'var(--accent-green)' },
+                    { label: 'Total Spend', value: `₹${totals.spend.toLocaleString()}`, color: 'var(--accent-red)' },
+                    { label: 'Net Savings', value: `₹${totals.net.toLocaleString()}`, color: totals.net >= 0 ? 'var(--accent-purple)' : 'var(--accent-red)' },
                 ].map((s, i) => (
                     <div key={i} className="card" style={{ padding: '16px 20px', textAlign: 'center' }}>
                         <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 6, textTransform: 'uppercase' }}>{s.label}</div>
@@ -98,30 +163,44 @@ export default function Transactions() {
                 </table>
             </div>
 
-            {/* Add Manual Modal */}
+            {/* Add Manual Modal — fully wired */}
             {showAdd && (
                 <div className="modal-overlay" onClick={() => setShowAdd(false)}>
                     <div className="modal-box" onClick={e => e.stopPropagation()}>
                         <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 20 }}>Add Manual Transaction</h2>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                            <div><label className="form-label">Description</label><input className="form-input" placeholder="e.g. Coffee shop" /></div>
-                            <div className="grid-2">
-                                <div><label className="form-label">Amount (₹)</label><input className="form-input" type="number" placeholder="0" /></div>
-                                <div><label className="form-label">Date</label><input className="form-input" type="date" /></div>
-                            </div>
                             <div>
-                                <label className="form-label">Category</label>
-                                <select className="form-input">
-                                    <option>Discretionary.DiningOut</option>
-                                    <option>Essential.Groceries</option>
-                                    <option>Essential.Bills</option>
-                                    <option>Savings.Investment</option>
-                                    <option>Discretionary.Entertainment</option>
-                                </select>
+                                <label className="form-label">Description / Merchant</label>
+                                <input className="form-input" placeholder="e.g. Coffee shop" value={formDesc} onChange={e => setFormDesc(e.target.value)} />
+                            </div>
+                            <div className="grid-2">
+                                <div>
+                                    <label className="form-label">Amount (₹)</label>
+                                    <input className="form-input" type="number" placeholder="0" min="1" value={formAmount} onChange={e => setFormAmount(e.target.value)} />
+                                </div>
+                                <div>
+                                    <label className="form-label">Date</label>
+                                    <input className="form-input" type="date" value={formDate} onChange={e => setFormDate(e.target.value)} />
+                                </div>
+                            </div>
+                            <div className="grid-2">
+                                <div>
+                                    <label className="form-label">Type</label>
+                                    <select className="form-input" value={formType} onChange={e => setFormType(e.target.value as 'DEBIT' | 'CREDIT')}>
+                                        <option value="DEBIT">Expense (Debit)</option>
+                                        <option value="CREDIT">Income (Credit)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="form-label">Category</label>
+                                    <select className="form-input" value={formCategory} onChange={e => setFormCategory(e.target.value)} disabled={formType === 'CREDIT'}>
+                                        {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c.replace('.', ' › ')}</option>)}
+                                    </select>
+                                </div>
                             </div>
                         </div>
                         <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-                            <button className="btn btn-primary" style={{ flex: 1 }}>Add Transaction</button>
+                            <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleAdd}>Add Transaction</button>
                             <button className="btn btn-secondary" onClick={() => setShowAdd(false)}>Cancel</button>
                         </div>
                     </div>

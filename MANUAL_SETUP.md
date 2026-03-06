@@ -328,6 +328,7 @@ This should list the tables. If you see tables, the database is ready!
 
 ---
 
+
 ## Step 7: Set Up Databases Without Docker
 
 > Only follow this section if you **cannot use Docker**.

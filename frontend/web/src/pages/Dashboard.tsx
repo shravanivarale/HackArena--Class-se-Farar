@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis } from 'recharts'
 import HeartbeatVisualizer from '../components/Dashboard/HeartbeatVisualizer'
 import { currentScore, scoreHistory, scoreForecast, spendingBreakdown, recentTransactions, getCategoryColor, currentUser, getBandConfig, ghostSubscriptions, ghostSummary, smartNudges } from '../data/mockData'
@@ -23,34 +24,142 @@ const componentData = [
     { subject: 'Debt-Free', value: 60 },
 ]
 
+const CATEGORY_OPTIONS = [
+    'Essential.Groceries', 'Essential.Transportation', 'Essential.Bills', 'Essential.Housing',
+    'Essential.Healthcare', 'Essential.Education', 'Essential.Insurance', 'Essential.EMI',
+    'Discretionary.DiningOut', 'Discretionary.Shopping', 'Discretionary.Entertainment',
+    'Discretionary.Subscriptions', 'Discretionary.Travel', 'Discretionary.PersonalCare',
+    'Savings.Investment', 'Savings.EmergencyFund',
+]
+
+function getCategoryColor(cat: string) {
+    if (cat.startsWith('Essential')) return '#3b82f6'
+    if (cat.startsWith('Discretionary')) return '#f59e0b'
+    if (cat.startsWith('Savings')) return '#10b981'
+    return '#94a3b8'
+}
+
 export default function Dashboard() {
-    const band = getBandConfig(currentScore.score)
+    const {
+        user, score, transactions, ghosts,
+        labelTransaction, cancelGhost, verifyGhost, snoozeGhost,
+    } = useApp()
+
+    const band = getBandConfig(score.score)
+    const [expandedCard, setExpandedCard] = useState<string | null>(null)
+
+    // ─── Smart Nudges: unlabelled transactions ───
+    const nudges = useMemo(() =>
+        transactions.filter(tx => tx.needsLabel && !tx.labelConfirmed).map(tx => {
+            const m = tx.merchant.toLowerCase()
+            let suggested = 'Discretionary.Shopping'
+            const alts: string[] = []
+            if (tx.amount < 100) { suggested = 'Discretionary.DiningOut'; alts.push('Essential.Groceries', 'Discretionary.Shopping') }
+            else if (tx.amount < 500) { suggested = 'Discretionary.DiningOut'; alts.push('Essential.Transportation', 'Discretionary.Shopping') }
+            else if (tx.amount < 2000) { suggested = 'Discretionary.Shopping'; alts.push('Essential.Bills', 'Essential.Groceries') }
+            else if (tx.amount < 5000) { suggested = 'Essential.Bills'; alts.push('Discretionary.Shopping', 'Essential.Groceries') }
+            else { suggested = 'Essential.Housing'; alts.push('Essential.Bills', 'Savings.Investment') }
+            if (m.includes('zomato') || m.includes('swiggy') || m.includes('food')) suggested = 'Discretionary.DiningOut'
+            if (m.includes('uber') || m.includes('ola') || m.includes('metro')) suggested = 'Essential.Transportation'
+            if (m.includes('amazon') || m.includes('flipkart') || m.includes('myntra')) suggested = 'Discretionary.Shopping'
+            if (m.includes('netflix') || m.includes('spotify') || m.includes('hotstar')) suggested = 'Discretionary.Subscriptions'
+            if (m.includes('dmart') || m.includes('bigbasket') || m.includes('grocer')) suggested = 'Essential.Groceries'
+            const conf = 0.55 + Math.random() * 0.35
+            const elapsed = Date.now() - new Date(tx.date).getTime()
+            const mins = Math.floor(elapsed / 60000)
+            const timeAgo = mins < 60 ? `${mins}m ago` : mins < 1440 ? `${Math.floor(mins / 60)}h ago` : `${Math.floor(mins / 1440)}d ago`
+            return { transactionId: tx.id, merchantName: tx.description, amount: tx.amount, suggested, conf, alts, timeAgo }
+        }),
+    [transactions])
+
+    // ─── SubVampire: active ghosts only ───
+    const activeGhosts = ghosts.filter(g => g.status === 'DETECTED')
+    const ghostTotal = activeGhosts.reduce((s, g) => s + g.annualWaste, 0)
+
+    // ─── Spending breakdown from live data ───
+    const spending = useMemo(() => {
+        const essential = transactions.filter(t => t.type === 'DEBIT' && t.category.startsWith('Essential')).reduce((s, t) => s + t.amount, 0)
+        const discretionary = transactions.filter(t => t.type === 'DEBIT' && t.category.startsWith('Discretionary')).reduce((s, t) => s + t.amount, 0)
+        const income = transactions.filter(t => t.type === 'CREDIT').reduce((s, t) => s + t.amount, 0)
+        const savings = Math.max(0, income - essential - discretionary)
+        const total = essential + discretionary + savings || 1
+        return [
+            { category: 'Essentials', amount: essential, pct: Math.round(essential / total * 100), color: '#3b82f6' },
+            { category: 'Discretionary', amount: discretionary, pct: Math.round(discretionary / total * 100), color: '#f59e0b' },
+            { category: 'Savings', amount: savings, pct: Math.round(savings / total * 100), color: 'var(--accent-green)' },
+        ]
+    }, [transactions])
+
+    const monthlySavings = spending[2]?.amount || 0
+    const toggleCard = (key: string) => setExpandedCard(prev => prev === key ? null : key)
+
+    // ─── Nudge dropdown state ───
+    const [nudgeDropdown, setNudgeDropdown] = useState<string | null>(null)
 
     return (
         <div className="animate-fade-in">
             <div className="page-title">Financial Health Dashboard</div>
-            <div className="page-subtitle">Good morning, {currentUser.name}! Your score improved +18 this week 🎉</div>
+            <div className="page-subtitle">Good morning, {user?.name || 'User'}! {score.change > 0 ? `Your score improved +${score.change} this week 🎉` : 'Keep going!'}</div>
 
             {/* Heartbeat Hero */}
             <div style={{ marginBottom: 24 }}>
-                <HeartbeatVisualizer score={currentScore.score} />
+                <HeartbeatVisualizer score={score.score} />
             </div>
 
-            {/* Quick stats row */}
+            {/* Expandable Quick Stats */}
             <div className="grid-4" style={{ marginBottom: 24 }}>
                 {[
-                    { label: 'Monthly Savings', value: '₹18,500', change: '+12%', icon: '💰', color: 'var(--accent-green)' },
-                    { label: 'Streak', value: `${currentUser.streakDays} Days`, change: 'Active', icon: '🔥', color: '#ffc107' },
-                    { label: 'VitalPoints', value: currentUser.vitalPoints.toLocaleString(), change: 'This Month', icon: '⚡', color: 'var(--accent-purple)' },
-                    { label: 'League Rank', value: '#12', change: 'Gold Tier', icon: '🏆', color: '#ffd700' },
-                ].map((stat, i) => (
-                    <div key={i} className="card" style={{ padding: '20px 22px' }}>
+                    { key: 'savings', label: 'Monthly Savings', value: `₹${monthlySavings.toLocaleString()}`, change: spending[2]?.pct ? `${spending[2].pct}%` : '—', icon: '💰', color: 'var(--accent-green)' },
+                    { key: 'streak', label: 'Streak', value: `${user?.streakDays || 0} Days`, change: 'Active', icon: '🔥', color: '#ffc107' },
+                    { key: 'points', label: 'VitalPoints', value: (user?.vitalPoints || 0).toLocaleString(), change: 'This Month', icon: '⚡', color: 'var(--accent-purple)' },
+                    { key: 'league', label: 'League Rank', value: user?.league || '—', change: 'Current Tier', icon: '🏆', color: '#ffd700' },
+                ].map((stat) => (
+                    <div key={stat.key} className="card" style={{ padding: '20px 22px', cursor: 'pointer', transition: 'all 0.3s ease' }} onClick={() => toggleCard(stat.key)}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                             <div style={{ fontSize: 24 }}>{stat.icon}</div>
-                            <span className="stat-chip green" style={{ fontSize: 11 }}>{stat.change}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <span className="stat-chip green" style={{ fontSize: 11 }}>{stat.change}</span>
+                                {expandedCard === stat.key ? <ChevronUp size={14} color="var(--text-muted)" /> : <ChevronDown size={14} color="var(--text-muted)" />}
+                            </div>
                         </div>
                         <div style={{ fontSize: 24, fontWeight: 800, color: stat.color, marginBottom: 4 }}>{stat.value}</div>
                         <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 500 }}>{stat.label}</div>
+
+                        {/* Expanded detail */}
+                        {expandedCard === stat.key && (
+                            <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--border)', animation: 'fadeIn 0.3s ease' }}>
+                                {stat.key === 'savings' && (
+                                    <div>
+                                        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>Target: ₹25,000/month</div>
+                                        <div className="progress-bar" style={{ height: 8, marginBottom: 6 }}>
+                                            <div className="progress-fill" style={{ width: `${Math.min(100, (monthlySavings / 25000) * 100)}%`, background: 'var(--accent-green)' }} />
+                                        </div>
+                                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{Math.round((monthlySavings / 25000) * 100)}% of goal reached</div>
+                                    </div>
+                                )}
+                                {stat.key === 'streak' && (
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+                                        {Array.from({ length: 14 }, (_, i) => {
+                                            const active = i < (user?.streakDays || 0)
+                                            return <div key={i} style={{ width: 20, height: 20, borderRadius: 4, background: active ? '#ffc107' : 'rgba(255,255,255,0.04)', border: `1px solid ${active ? '#ffc10740' : 'var(--border)'}` }} />
+                                        })}
+                                    </div>
+                                )}
+                                {stat.key === 'points' && (
+                                    <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                                        <div style={{ marginBottom: 4 }}>📝 Smart Nudge confirmations: +12 XP each</div>
+                                        <div style={{ marginBottom: 4 }}>🏆 Challenge completions: +15-50 XP</div>
+                                        <div>💀 Ghost subscriptions killed: +25 XP each</div>
+                                    </div>
+                                )}
+                                {stat.key === 'league' && (
+                                    <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                                        <div>Bronze → Silver → Gold → Platinum</div>
+                                        <div style={{ marginTop: 4 }}>Top 10% of league earns "Vital Elite" badge</div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 ))}
             </div>
@@ -59,28 +168,51 @@ export default function Dashboard() {
             {smartNudges.length > 0 && (
                 <div className="card" style={{ marginBottom: 24, border: '1px solid rgba(255,193,7,0.3)', background: 'rgba(255,193,7,0.05)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                        <AlertTriangle size={18} color="#ffc107" />
-                        <span style={{ fontSize: 14, fontWeight: 700, color: '#ffc107' }}>Smart Nudge</span>
-                        <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>{smartNudges.length} pending • +12 XP each</span>
+                        <span style={{ fontSize: 18 }}>🤔</span>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: '#ffc107' }}>Smart Nudge — Categorize Your Spending</span>
+                        <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>{nudges.length} pending • +12 XP each</span>
                     </div>
-                    {smartNudges.map((nudge, i) => (
-                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderTop: i > 0 ? '1px solid var(--border)' : 'none' }}>
+                    {nudges.slice(0, 5).map((nudge) => (
+                        <div key={nudge.transactionId} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderTop: '1px solid var(--border)' }}>
                             <div style={{ flex: 1 }}>
                                 <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>
-                                    {nudge.merchantName} — ₹{nudge.amount.toLocaleString()}
+                                    Did you just spend ₹{nudge.amount.toLocaleString()} on {nudge.merchantName}?
                                 </div>
                                 <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                                    Suggested: <span style={{ color: '#ffc107', fontWeight: 600 }}>{nudge.suggestedCategory.split('.')[1]}</span>
-                                    <span style={{ opacity: 0.5 }}> ({Math.round(nudge.suggestedConfidence * 100)}% conf) • {nudge.timeAgo}</span>
+                                    Suggested: <span style={{ color: '#ffc107', fontWeight: 600 }}>{nudge.suggested.split('.')[1]}</span>
+                                    <span style={{ opacity: 0.5 }}> ({Math.round(nudge.conf * 100)}% conf) • {nudge.timeAgo}</span>
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', gap: 6 }}>
-                                <button style={{ padding: '6px 14px', borderRadius: 6, background: 'var(--accent-green)', color: '#0a0f1c', border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <div style={{ display: 'flex', gap: 6, alignItems: 'center', position: 'relative' }}>
+                                <button
+                                    onClick={() => labelTransaction(nudge.transactionId, nudge.suggested, nudge.suggested.split('.')[1])}
+                                    style={{ padding: '6px 14px', borderRadius: 6, background: 'var(--accent-green)', color: '#0a0f1c', border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                                >
                                     <Check size={12} /> Confirm
                                 </button>
-                                <button style={{ padding: '6px 10px', borderRadius: 6, background: 'rgba(255,255,255,0.06)', color: 'var(--text-muted)', border: '1px solid var(--border)', fontSize: 12, cursor: 'pointer' }}>
-                                    Change
-                                </button>
+                                <div style={{ position: 'relative' }}>
+                                    <button
+                                        onClick={() => setNudgeDropdown(nudgeDropdown === nudge.transactionId ? null : nudge.transactionId)}
+                                        style={{ padding: '6px 10px', borderRadius: 6, background: 'rgba(255,255,255,0.06)', color: 'var(--text-muted)', border: '1px solid var(--border)', fontSize: 12, cursor: 'pointer' }}
+                                    >
+                                        Change ▾
+                                    </button>
+                                    {nudgeDropdown === nudge.transactionId && (
+                                        <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 4, background: 'rgba(15,23,42,0.98)', border: '1px solid rgba(0,212,170,0.15)', borderRadius: 10, padding: 4, zIndex: 100, width: 220, maxHeight: 240, overflowY: 'auto', boxShadow: '0 10px 40px rgba(0,0,0,0.4)' }}>
+                                            {CATEGORY_OPTIONS.map(cat => (
+                                                <div
+                                                    key={cat}
+                                                    onClick={() => { labelTransaction(nudge.transactionId, cat, cat.split('.')[1]); setNudgeDropdown(null) }}
+                                                    style={{ padding: '8px 12px', fontSize: 12, color: getCategoryColor(cat), cursor: 'pointer', borderRadius: 6, fontWeight: 500 }}
+                                                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
+                                                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                                                >
+                                                    {cat.replace('.', ' › ')}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     ))}
@@ -88,18 +220,18 @@ export default function Dashboard() {
             )}
 
             {/* SubVampire — Ghost Subscription Alerts */}
-            {ghostSubscriptions.length > 0 && (
+            {activeGhosts.length > 0 && (
                 <div className="card" style={{ marginBottom: 24, border: '1px solid rgba(138,43,226,0.25)', background: 'rgba(138,43,226,0.04)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
                         <span style={{ fontSize: 20 }}>🧛</span>
                         <span style={{ fontSize: 14, fontWeight: 700, color: '#c084fc' }}>SubVampire Alert</span>
                         <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>
-                            Draining ₹{ghostSummary.totalMonthlyWaste}/mo (₹{ghostSummary.totalAnnualWaste.toLocaleString()}/yr)
+                            Draining ₹{Math.round(ghostTotal / 12).toLocaleString()}/mo (₹{ghostTotal.toLocaleString()}/yr)
                         </span>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
-                        {ghostSubscriptions.map((ghost, i) => (
-                            <div key={i} style={{ padding: '14px 16px', background: 'rgba(255,255,255,0.03)', borderRadius: 10, border: '1px solid var(--border)' }}>
+                        {activeGhosts.map((ghost) => (
+                            <div key={ghost.id} style={{ padding: '14px 16px', background: 'rgba(255,255,255,0.03)', borderRadius: 10, border: '1px solid var(--border)' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                                     <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{ghost.merchant}</span>
                                     <span style={{ fontSize: 11, fontWeight: 700, color: ghost.ghostScore > 80 ? '#ff4757' : '#ffc107', background: ghost.ghostScore > 80 ? 'rgba(255,71,87,0.12)' : 'rgba(255,193,7,0.12)', padding: '2px 8px', borderRadius: 12 }}>
@@ -107,24 +239,22 @@ export default function Dashboard() {
                                     </span>
                                 </div>
                                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10 }}>
-                                    ₹{ghost.monthlyAmount}/mo • Unused for {ghost.lastUsedDaysAgo} days
+                                    ₹{ghost.monthlyAmount}/mo • Unused {ghost.lastUsedDaysAgo} days
                                 </div>
                                 <div style={{ display: 'flex', gap: 6 }}>
-                                    <button style={{ flex: 1, padding: '6px 0', borderRadius: 6, background: 'linear-gradient(135deg, #c084fc, #8b5cf6)', color: '#fff', border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                                    <button onClick={() => cancelGhost(ghost.id)} style={{ flex: 1, padding: '6px 0', borderRadius: 6, background: 'linear-gradient(135deg, #c084fc, #8b5cf6)', color: '#fff', border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                                         Cancel & Save ₹{ghost.annualWaste.toLocaleString()}/yr
                                     </button>
-                                    <button style={{ padding: '6px 10px', borderRadius: 6, background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border)', fontSize: 11, cursor: 'pointer' }}>
+                                    <button onClick={() => verifyGhost(ghost.id)} style={{ padding: '6px 10px', borderRadius: 6, background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border)', fontSize: 11, cursor: 'pointer' }}>
                                         I use this
+                                    </button>
+                                    <button onClick={() => snoozeGhost(ghost.id)} style={{ padding: '6px 8px', borderRadius: 6, background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border)', fontSize: 11, cursor: 'pointer' }} title="Remind me in 7 days">
+                                        <Clock size={12} />
                                     </button>
                                 </div>
                             </div>
                         ))}
                     </div>
-                    {ghostSummary.totalSavedThisYear > 0 && (
-                        <div style={{ marginTop: 12, padding: '8px 14px', background: 'rgba(0,212,170,0.08)', borderRadius: 8, fontSize: 12, color: 'var(--accent-green)', fontWeight: 500 }}>
-                            🎉 You've saved ₹{ghostSummary.totalSavedThisYear.toLocaleString()} this year by killing ghost subscriptions!
-                        </div>
-                    )}
                 </div>
             )}
 
@@ -186,7 +316,7 @@ export default function Dashboard() {
                 {/* Spending Breakdown */}
                 <div className="card">
                     <div className="section-title">Spending Breakdown</div>
-                    {spendingBreakdown.map((item, i) => (
+                    {spending.map((item, i) => (
                         <div key={i} style={{ marginBottom: 14 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                                 <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>{item.category}</span>
@@ -195,7 +325,7 @@ export default function Dashboard() {
                                 </span>
                             </div>
                             <div className="progress-bar">
-                                <div className="progress-fill" style={{ width: `${item.pct * 2.5}%`, background: item.color }} />
+                                <div className="progress-fill" style={{ width: `${item.pct}%`, background: item.color }} />
                             </div>
                         </div>
                     ))}
@@ -229,7 +359,7 @@ export default function Dashboard() {
                         </tr>
                     </thead>
                     <tbody>
-                        {recentTransactions.slice(0, 5).map(tx => (
+                        {transactions.slice(0, 5).map(tx => (
                             <tr key={tx.id}>
                                 <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>{tx.date}</td>
                                 <td style={{ fontWeight: 500 }}>{tx.description}</td>
