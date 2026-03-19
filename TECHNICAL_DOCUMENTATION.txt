@@ -1,0 +1,1354 @@
+================================================================================
+                    VITALSCORE FINANCE — COMPLETE TECHNICAL DOCUMENTATION
+================================================================================
+   Team: Class se farar (Aditya Yadav, Shravani Varale, Tejas Raut)
+   Event: VICSTA Hackathon Grand Finale — March 5-6, 2026
+   Tagline: "Your Financial Heartbeat — AI-Driven, Gamified, Blockchain-Backed"
+================================================================================
+
+
+TABLE OF CONTENTS
+─────────────────
+1.  PROJECT OVERVIEW
+2.  COMPLETE SYSTEM ARCHITECTURE
+3.  TECH STACK
+4.  DATABASE DESIGN
+5.  FEATURE-BY-FEATURE BREAKDOWN (User Flow + Architecture + How It Works)
+    5.1  Authentication (Login / Signup)
+    5.2  VitalScore Engine (Financial Health Scoring)
+    5.3  Dashboard & Heartbeat Visualizer
+    5.4  Smart Nudge (AI Transaction Categorization)
+    5.5  SubVampire (Ghost Subscription Detection)
+    5.6  Challenges & Staking (Escrow on Algorand)
+    5.7  SplitSync (Bill Splitting + WhatsApp Reminders)
+    5.8  Funding Pools (Community Savings)
+    5.9  Blockchain Proofs (Audit Trail)
+    5.10 Gamification (XP, Streaks, Leagues)
+    5.11 Transaction Management
+    5.12 User Profile
+    5.13 Notification System
+6.  API ENDPOINTS REFERENCE
+7.  BLOCKCHAIN SMART CONTRACTS
+8.  DATA FLOW DIAGRAMS
+9.  SECURITY & PRIVACY
+10. DEPLOYMENT ARCHITECTURE
+
+
+================================================================================
+1. PROJECT OVERVIEW
+================================================================================
+
+VitalScore Finance is an AI-driven, gamified financial wellness platform designed
+for India's 500M+ UPI users. It transforms personal finance management from a
+boring spreadsheet exercise into an engaging, game-like experience backed by
+blockchain-verified trust.
+
+CORE PHILOSOPHY:
+  - "Invisible Blockchain" — Users see "Verified ✓" badges, not crypto jargon
+  - Behavioral Finance — Uses loss aversion, social proof, and streaks
+  - AI-First Categorization — Transactions auto-categorized with confidence scores
+  - Real Money Stakes — Optional escrow-based challenges with actual financial commitment
+
+TARGET USERS: Young Indian professionals (18-35) who use UPI daily but lack
+financial discipline. The platform turns saving money into a competitive,
+rewarding experience.
+
+
+================================================================================
+2. COMPLETE SYSTEM ARCHITECTURE
+================================================================================
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                           FRONTEND (React SPA)                              │
+│  React 18 + TypeScript + Vite 5.4 + React Router 6                         │
+│  Recharts (charts) + Framer Motion (animations) + Lucide (icons)           │
+│                                                                              │
+│  ┌──────────┐  ┌──────────────┐  ┌────────────┐  ┌────────────────────────┐│
+│  │ AppContext│  │ProtectedRoute│  │ BrowserRoute│  │ localStorage Persist  ││
+│  │ (Central │  │  (Auth Guard) │  │  (SPA Nav)  │  │ (State Persistence)  ││
+│  │  State)  │  └──────────────┘  └────────────┘  └────────────────────────┘│
+│  └──────────┘                                                                │
+│                                                                              │
+│  Pages: Dashboard | Transactions | Challenges | SplitSync | FundingPool     │
+│         Profile | BlockchainProofs | Login | Signup                          │
+│  Components: Sidebar | TopBar | HeartbeatVisualizer | NotificationDropdown  │
+└────────────────────────────────┬─────────────────────────────────────────────┘
+                                 │ HTTP REST APIs
+                                 ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                         API GATEWAY / MICROSERVICES                         │
+│                                                                              │
+│  ┌────────────────┐  ┌─────────────────┐  ┌───────────────────────────┐     │
+│  │ Auth Service    │  │ User Profile    │  │ Transaction Ingestion     │     │
+│  │ Port: 3002     │  │ Port: 3001      │  │ Port: 3003                │     │
+│  │ JWT + OAuth2   │  │ CRUD + KYC      │  │ Razorpay + PII Tokenize  │     │
+│  └────────────────┘  └─────────────────┘  └───────────────────────────┘     │
+│                                                                              │
+│  ┌────────────────┐  ┌─────────────────┐  ┌───────────────────────────┐     │
+│  │ Score Engine    │  │ Gamification    │  │ AI Categorization         │     │
+│  │ Port: 3004     │  │ Port: 3005      │  │ Port: 3007                │     │
+│  │ Real-time Calc │  │ Challenges/XP   │  │ ML + Rule-based Classify  │     │
+│  │ Nightly Batch  │  │ Twilio WhatsApp │  │ Groq LLM + BERT          │     │
+│  └────────────────┘  └─────────────────┘  └───────────────────────────┘     │
+│                                                                              │
+│  ┌──────────────────────────────────────────────────────────────────────┐    │
+│  │ Blockchain Service (Python Flask)  Port: 3006                       │    │
+│  │ NFT Minting | Escrow Lock/Release | Squad Treasury | Token Issue    │    │
+│  │ SplitSync Contracts | Funding Pool Contracts | IPFS Pinning         │    │
+│  └──────────────────────────────────────────────────────────────────────┘    │
+└────────────┬──────────────────┬───────────────────┬─────────────────────────┘
+             │                  │                   │
+             ▼                  ▼                   ▼
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────────────────────┐
+│   PostgreSQL    │  │     Redis       │  │   Algorand Blockchain           │
+│   Port: 5432    │  │   Port: 6379    │  │   TestNet / MainNet             │
+│                 │  │                 │  │                                   │
+│ - user_profiles │  │ - Session cache │  │ - VitalToken (ASA)               │
+│ - transactions  │  │ - Rate limiting │  │ - SoulBoundNFT (PyTeal)          │
+│ - score_snapshots│ │ - Leaderboards  │  │ - ChallengeEscrow (PyTeal)       │
+│ - challenges    │  │                 │  │ - SquadTreasury (PyTeal)          │
+│ - squads        │  └─────────────────┘  │ - SplitSync Contract             │
+│ - streaks       │                       │ - FundingPool Contract            │
+│ - badges        │  ┌─────────────────┐  └─────────────────────────────────┘
+│ - leaderboards  │  │   InfluxDB      │
+│ - notifications │  │   Port: 8086    │  ┌─────────────────────────────────┐
+│ - bank_connect  │  │                 │  │   External APIs                  │
+│ - audit_logs    │  │ Time-series:    │  │ - Razorpay (Payments/Payouts)    │
+└─────────────────┘  │ - txn_events    │  │ - Twilio (WhatsApp Messaging)    │
+                     │ - score_events  │  │ - IPFS/Pinata (NFT Metadata)     │
+┌─────────────────┐  │ - challenge_evts│  │ - Groq API (AI Categorization)   │
+│   AWS SQS       │  └─────────────────┘  │ - Web3Auth (Social Login)        │
+│  (Event Queue)  │                       └─────────────────────────────────┘
+│ LocalStack local│
+└─────────────────┘
+
+
+ARCHITECTURE PRINCIPLES:
+  1. Microservices — Each domain has its own service, independently deployable
+  2. Event-Driven — SQS for async processing (score recalc, blockchain batching)
+  3. Invisible Blockchain — Algorand runs silently; users never see wallet addresses
+  4. Graceful Degradation — If any backend is down, frontend uses local state
+  5. Privacy-First — PII tokenization, AES-256 encryption, read-only bank access
+
+
+================================================================================
+3. TECH STACK
+================================================================================
+
+LAYER                TECHNOLOGY                PURPOSE
+────────────────────────────────────────────────────────────────────────────────
+Frontend Framework   React 18 + TypeScript     Component-based SPA
+Build Tool           Vite 5.4                  Fast HMR, optimized bundling
+Routing              React Router 6            Client-side navigation + guards
+State Management     React Context + Hooks     Centralized state with persistence
+Charts               Recharts                  AreaChart, RadarChart, BarChart
+Animations           Framer Motion             Page transitions, micro-interactions
+Icons                Lucide React              200+ consistent SVG icons
+Styling              CSS Variables + Custom    Dark theme with CSS custom props
+Canvas               HTML5 Canvas              HeartbeatVisualizer ECG animation
+────────────────────────────────────────────────────────────────────────────────
+Backend Runtime      Node.js + TypeScript      Express-based microservices
+Python Backend       Flask                     Blockchain integration service
+API Security         Helmet + CORS + JWT       HTTP hardening + auth tokens
+Rate Limiting        express-rate-limit         100-200 req/15min per endpoint
+Logging              Winston                   Structured logging with request IDs
+Cron Jobs            node-cron                 Weekly challenges, pool expiration
+────────────────────────────────────────────────────────────────────────────────
+Primary Database     PostgreSQL 15             User profiles, transactions, scores
+Time-Series DB       InfluxDB 2.7             Real-time score events, analytics
+Cache / Sessions     Redis 7                   Session management, leaderboards
+Message Queue        AWS SQS (LocalStack)      Async event processing
+────────────────────────────────────────────────────────────────────────────────
+Blockchain           Algorand (TestNet)         Verifiable financial actions
+Smart Contracts      PyTeal                    Escrow, NFT, Treasury, Token
+Token Standard       ASA (Algorand Std Asset)  VitalToken reward currency
+NFT Standard         Soul-Bound Token          Non-transferable score snapshots
+IPFS                 Pinata                    Decentralized metadata storage
+────────────────────────────────────────────────────────────────────────────────
+Payment Gateway      Razorpay                  UPI, card payments, payment links
+Messaging            Twilio                    WhatsApp notifications + reminders
+AI/ML                Groq API (LLM)            Smart transaction categorization
+Auth                 Web3Auth + JWT            Social login, wallet generation
+────────────────────────────────────────────────────────────────────────────────
+Containers           Docker + docker-compose   Local dev environment
+AWS Emulation        LocalStack                SQS + S3 for local development
+DB Admin             pgAdmin                   PostgreSQL management UI
+Cache Admin          redis-commander           Redis management UI
+────────────────────────────────────────────────────────────────────────────────
+
+
+================================================================================
+4. DATABASE DESIGN
+================================================================================
+
+4.1 POSTGRESQL SCHEMA (Relational Data)
+────────────────────────────────────────
+
+TABLE: user_profiles
+  - user_id (UUID, PK)        — Unique user identifier
+  - income_bracket (ENUM)     — TIER_1/TIER_2/TIER_3/TIER_4
+  - income_type (ENUM)        — SALARIED/FREELANCE/BUSINESS/STUDENT
+  - declared_monthly_income   — User-declared income (decimal)
+  - location_type (ENUM)      — URBAN/RURAL
+  - location_state/city       — Geographic data for localized scoring
+  - league_id                 — Current league assignment
+  - algorand_address          — Algorand wallet (auto-generated, invisible)
+  - sbt_asset_id              — Soul-Bound Token asset ID
+  - kyc_status (ENUM)         — VERIFIED/PENDING/FAILED
+  - household_config (JSONB)  — Shared expense configurations
+  - consent_flags (JSONB)     — Escrow, squad, data sharing preferences
+  - notification_preferences  — Frequency, alert types
+
+TABLE: transactions
+  - txn_id (UUID, PK)         — Transaction identifier
+  - user_token                — Anonymized user reference (PII tokenization)
+  - merchant_normalized       — Cleaned merchant name
+  - amount (decimal)          — Transaction amount in INR
+  - currency (default INR)    — Transaction currency
+  - category (varchar)        — AI-classified category (Essential.Groceries etc.)
+  - category_confidence       — ML model confidence (0.0-1.0)
+  - is_recurring (boolean)    — Subscription detection flag
+  - is_shared (boolean)       — Part of SplitSync
+  - razorpay_payment_id       — Razorpay reference
+  - raw_description           — Original bank description
+  - metadata (JSONB)          — Extra context data
+
+TABLE: score_snapshots
+  - snapshot_id (UUID, PK)    — Snapshot identifier
+  - user_id (FK)              — User reference
+  - score (0-1000)            — Calculated VitalScore
+  - band (varchar)            — Vital Emergency -> Vital Elite
+  - band_key (varchar)        — CSS/config key
+  - trajectory (varchar)      — IMPROVING/DECLINING/STABLE
+  - components (JSONB)        — Breakdown: necessity_ratio, savings_ratio, etc.
+  - period_type (ENUM)        — DAILY/WEEKLY/MONTHLY calculation period
+  - created_at (timestamp)    — When snapshot was taken
+
+TABLE: challenges
+  - challenge_id (UUID, PK)   — Challenge identifier
+  - user_id (FK)              — User reference
+  - type (varchar)            — REDUCE_CATEGORY/SAVINGS_VELOCITY/NO_IMPULSE
+  - title, description        — Display text
+  - target_value, current     — Progress tracking
+  - difficulty (ENUM)         — EASY/MEDIUM/HARD
+  - deadline (timestamp)      — Challenge expiry
+  - stake (JSONB)             — {amount, escrow_app_id, txn_hash, status}
+  - score_bonus (int)         — Points awarded on completion
+  - status (ENUM)             — ACTIVE/STAKED/COMPLETED/FAILED/EXPIRED
+
+TABLE: squads
+  - squad_id (UUID, PK)       — Squad identifier
+  - member_user_ids (UUID[])  — Array of member IDs (3-8 users)
+  - configuration (JSONB)     — Season dates, goal amount, rules
+  - treasury (JSONB)          — {app_id, total_contributed, yield_accumulated}
+  - status (ENUM)             — FORMING/ACTIVE/DISTRIBUTING/COMPLETED
+
+TABLE: bank_connections
+  - connection_id (UUID, PK)  — Connection identifier
+  - user_id (FK)              — User reference
+  - razorpay_customer_id      — Razorpay customer reference
+  - consent_expires_at        — Data access expiry
+  - status (ENUM)             — ACTIVE/EXPIRED/REVOKED
+
+TABLE: streaks
+  - streak_id (UUID, PK)      — Streak identifier
+  - user_id (FK)              — User reference
+  - current_streak_days       — Days in current streak
+  - longest_streak_days       — All-time best
+  - streak_freezes_remaining  — Max 2 per month
+  - last_check_date           — Last daily verification
+
+TABLE: badges
+  - badge_id (UUID, PK)       — Badge identifier
+  - user_id (FK)              — User reference
+  - badge_type (varchar)      — FIRST_CHALLENGE, STREAK_7, GHOST_KILLER, etc.
+  - earned_at (timestamp)     — When earned
+
+TABLE: leaderboards
+  - leaderboard_id (UUID, PK) — Board identifier
+  - week_start (date)         — Weekly period
+  - league_id (varchar)       — League filter
+  - rankings (JSONB)          — [{user_id, score, rank, change}]
+
+TABLE: notifications
+  - notification_id (UUID, PK)— Notification identifier
+  - user_id (FK)              — Recipient
+  - type (varchar)            — push/whatsapp/in_app
+  - channel (varchar)         — Delivery channel
+  - payload (JSONB)           — Message content
+  - read_at (timestamp)       — When read (null = unread)
+
+TABLE: audit_logs
+  - log_id (UUID, PK)         — Log entry identifier
+  - user_id (FK)              — Actor
+  - action (varchar)          — What happened
+  - entity_type + entity_id   — What was affected
+  - metadata (JSONB)          — Additional context
+  - ip_address (inet)         — Source IP
+
+TABLE: user_token_mapping
+  - mapping_id (UUID, PK)     — Mapping identifier
+  - user_id (FK)              — Original user
+  - user_token (varchar)      — Anonymized token for PII protection
+
+
+4.2 INFLUXDB SCHEMA (Time-Series Data)
+───────────────────────────────────────
+
+MEASUREMENT: transaction_events
+  Tags:    user_token, category_primary, category_secondary, merchant_normalized
+  Fields:  amount (float), category_confidence (float)
+  Retention: 1 year
+
+MEASUREMENT: score_events
+  Tags:    user_token, band, trajectory, period_type
+  Fields:  score (int), necessity_ratio, savings_ratio, debt_penalty,
+           streak_bonus, challenge_bonus
+  Retention: 1 year
+
+MEASUREMENT: challenge_events
+  Tags:    user_token, challenge_type, difficulty, outcome
+  Fields:  stake_amount, score_bonus, completion_pct
+  Retention: 1 year
+
+Retention Policies: default (1yr), three_months, realtime (7 days)
+Continuous Queries: 15-min, hourly, daily aggregations
+
+
+================================================================================
+5. FEATURE-BY-FEATURE BREAKDOWN
+================================================================================
+
+
+────────────────────────────────────────────────────────────────────────────────
+5.1  AUTHENTICATION (Login / Signup)
+────────────────────────────────────────────────────────────────────────────────
+
+USER FLOW:
+  1. User opens app → sees Login page (no sidebar/topbar)
+  2. Enters email + password → clicks "Sign In"
+  3. If account exists: logged in, redirected to /dashboard
+  4. If not: clicks "Sign Up" → enters name, email, phone, password
+  5. Account created → auto-logged in → welcome notification shown
+
+ARCHITECTURE FLOW:
+  Frontend (Login.tsx / Signup.tsx)
+    → POST /auth/login or POST /users (via AppContext)
+    → Auth Service (port 3002) validates credentials
+    → Returns JWT token + user object
+    → AppContext stores user in state + localStorage
+    → ProtectedRoute wrapper allows access to app pages
+
+HOW IT WORKS:
+  - Auth Service uses Helmet for HTTP hardening, rate-limits to 100 req/15min
+  - Passwords hashed with bcrypt before storage
+  - JWT tokens for session management with refresh capability
+  - OAuth2 integration available (Google, etc.)
+  - GRACEFUL FALLBACK: If backend is down, stores users in localStorage
+    and validates locally (essential for hackathon demo)
+  - AppContext.isAuthenticated controls route access via ProtectedRoute component
+  - Unauthenticated users are redirected to /login via Navigate component
+  - On logout, localStorage is cleared and user is redirected to /login
+
+TECH:
+  Frontend: React forms with controlled inputs, useCallback for handlers
+  Backend:  Express + Helmet + CORS + JWT + bcrypt + rate-limit
+  Storage:  PostgreSQL (user_profiles) + localStorage (fallback)
+
+
+────────────────────────────────────────────────────────────────────────────────
+5.2  VITALSCORE ENGINE (Financial Health Scoring)
+────────────────────────────────────────────────────────────────────────────────
+
+USER FLOW:
+  1. User's financial score (0-1000) is displayed in TopBar at all times
+  2. Score updates in real-time as transactions are added/categorized
+  3. Score bands determine UI color theme:
+     - Vital Elite (800+):     Green #00d4aa
+     - Vital Strong (600-799): Blue  #3b82f6
+     - Vital Warning (400-599):Yellow #ffc107
+     - Vital Critical (200-399):Orange #ff6b35
+     - Vital Emergency (0-199): Red  #ff4757
+
+ARCHITECTURE FLOW:
+  Transaction Added/Categorized
+    → AppContext.calculateScore() triggered
+    → Analyzes 3 months of transaction history
+    → Weights: 60% necessity ratio + 40% savings ratio
+    → Adds streak bonus (up to +50) and challenge bonus (+25)
+    → Subtracts debt penalty
+    → Normalized to 0-1000 range
+    → Score state updated → UI re-renders everywhere
+
+  Backend (Score Engine Service, port 3004):
+    → Listens to SQS transaction events
+    → Micro-updates within 60 seconds of new transaction
+    → Nightly batch recalculation at 02:00 (3-month rolling average)
+    → Stores snapshots in score_snapshots table + InfluxDB
+
+HOW IT WORKS (Formula):
+  1. Gather all transactions from past 3 months
+  2. Classify into: Essential (E), Discretionary (D), Income (I)
+  3. necessity_ratio = E / (E + D)  — How much of spending is on essentials
+  4. savings_ratio = (I - E - D) / I  — How much income is saved
+  5. raw_score = (0.60 × necessity_ratio + 0.40 × savings_ratio) × 1000
+  6. final_score = raw_score - debt_penalty + streak_bonus + challenge_bonus
+  7. Clamped to [0, 1000]
+  8. Band assigned based on score range
+
+SPECIAL FEATURES:
+  - Emergency Mode: If essential spending > 90%, weights shift to 80% essential
+  - Anomaly Detection: Flags spending > 300% of 90-day average
+  - Inflation Adjustment: CPI data applied for fair comparison
+  - Score trajectory: IMPROVING/DECLINING/STABLE tracked over time
+
+TECH:
+  Frontend: calculateScore() in AppContext, real-time useMemo in Dashboard
+  Backend:  Score Engine (port 3004) + SQS events + node-cron nightly batch
+  Storage:  PostgreSQL (score_snapshots) + InfluxDB (score_events)
+
+
+────────────────────────────────────────────────────────────────────────────────
+5.3  DASHBOARD & HEARTBEAT VISUALIZER
+────────────────────────────────────────────────────────────────────────────────
+
+USER FLOW:
+  1. User sees a full-width animated ECG/heartbeat visualization at the top
+     - Heart rate animation speed reflects financial health band
+     - Color changes based on score band (green = healthy, red = emergency)
+  2. Below: 4 expandable stat cards (Monthly Savings, Streak, VitalPoints, League)
+     - Click any card to expand with detailed breakdown
+     - Savings card shows progress bar toward ₹25,000/month goal
+     - Streak card shows 14-day visual calendar
+     - Points card shows XP earning methods
+  3. Smart Nudge banner (pending categorizations)
+  4. SubVampire alerts (ghost subscriptions)
+  5. Two-column charts: Score History (7 months) + 30-Day Forecast
+  6. Two-column: Spending Breakdown (progress bars) + Score Components (radar)
+  7. Recent Transactions table (top 5 with "View All" link)
+
+ARCHITECTURE FLOW:
+  Dashboard.tsx
+    → Reads user, score, transactions, ghosts from AppContext
+    → useMemo computes: nudges (unlabelled txns), spending breakdown, stats
+    → HeartbeatVisualizer renders canvas-based ECG animation
+    → Recharts renders AreaChart (history), AreaChart (forecast), RadarChart
+    → Each stat card has expandable content with animations
+
+HOW IT WORKS:
+  HeartbeatVisualizer:
+  - HTML5 Canvas with requestAnimationFrame loop
+  - ECG waveform generated with sine functions + spike patterns
+  - Speed varies: Elite = 1.2x (calm), Emergency = 2.5x (rapid)
+  - Glow effect proportional to score health
+  - Real-time score display in center with band label
+
+  Spending Breakdown (computed live):
+  - Essential = all DEBIT transactions starting with "Essential."
+  - Discretionary = all DEBIT transactions starting with "Discretionary."
+  - Savings = max(0, Income - Essential - Discretionary)
+  - Percentages calculated and rendered as progress bars
+
+  30-Day Forecast:
+  - "Current Path" (yellow dashed) — projection if spending stays same
+  - "If Optimized" (green solid) — projection if user follows recommendations
+  - Tip: "Reduce dining out 20% → reach 795 by Day 30"
+
+TECH:
+  Frontend: Canvas API, Recharts (AreaChart, RadarChart), CSS animations
+  Data:     All computed from AppContext state — no extra API calls
+
+
+────────────────────────────────────────────────────────────────────────────────
+5.4  SMART NUDGE (AI Transaction Categorization)
+────────────────────────────────────────────────────────────────────────────────
+
+USER FLOW:
+  1. When a transaction is added (manually or via bank sync), it may arrive
+     without a category (needsLabel = true)
+  2. Dashboard shows a yellow banner: "Smart Nudge — Categorize Your Spending"
+  3. Each nudge shows:
+     - "Did you just spend ₹450 on Zomato?"
+     - Suggested category: "DiningOut" (87% confidence)
+     - Time ago: "2 hours ago"
+  4. User can:
+     - Click "Confirm" → accepts AI suggestion → earns +12 XP
+     - Click "Change ▾" → dropdown of 16 categories → picks correct one → +12 XP
+  5. Transaction is now categorized, score recalculates
+
+ARCHITECTURE FLOW:
+  New Transaction (needsLabel=true)
+    → Dashboard.tsx useMemo generates nudge objects
+    → For each: analyzes amount + merchant name patterns
+    → Assigns category with confidence score
+    → User action triggers labelTransaction()
+    → AppContext updates transaction, adds +12 XP to user
+    → Score recalculated with properly categorized data
+
+  Backend (AI Categorization Service, port 3007):
+    → Two-layer classification:
+       Layer 1: Rule-based (merchant name matching) → 95% of transactions
+       Layer 2: Groq LLM (BERT-based) for low-confidence (<70%) cases
+    → Returns: { category, confidence, alternatives[] }
+    → Rate limited to 200 req/15min
+
+HOW IT WORKS (Frontend ML-like Logic):
+  Amount-based heuristics:
+    < ₹100  → Dining Out
+    < ₹500  → Dining Out (or Transportation)
+    < ₹2000 → Shopping (or Bills)
+    < ₹5000 → Bills (or Shopping)
+    ≥ ₹5000 → Housing (or Bills)
+
+  Merchant name pattern matching:
+    zomato, swiggy, food     → Discretionary.DiningOut
+    uber, ola, metro         → Essential.Transportation
+    amazon, flipkart, myntra → Discretionary.Shopping
+    netflix, spotify, hotstar→ Discretionary.Subscriptions
+    dmart, bigbasket         → Essential.Groceries
+
+  Confidence = 0.55 + random(0.35)  (simulates ML confidence range)
+
+CATEGORY TAXONOMY (16 categories):
+  Essential:      Groceries, Transportation, Bills, Housing, Healthcare,
+                  Education, Insurance, EMI
+  Discretionary:  DiningOut, Shopping, Entertainment, Subscriptions,
+                  Travel, PersonalCare
+  Savings:        Investment, EmergencyFund
+
+TECH:
+  Frontend: useMemo in Dashboard.tsx, pattern matching, dropdown selector
+  Backend:  Groq API (LLM), BERT model, rule-based classifier
+  Reward:   +12 XP per categorization
+
+
+────────────────────────────────────────────────────────────────────────────────
+5.5  SUBVAMPIRE (Ghost Subscription Detection)
+────────────────────────────────────────────────────────────────────────────────
+
+USER FLOW:
+  1. System automatically scans transaction history for recurring charges
+  2. If a subscription hasn't been used in 25+ days, it's flagged as "ghost"
+  3. Dashboard shows purple "SubVampire Alert" banner:
+     - "Netflix — ₹199/mo — Unused 45 days — 80% ghost"
+     - "Spotify — ₹119/mo — Unused 32 days — 60% ghost"
+  4. For each ghost, user can:
+     - "Cancel & Save ₹2,388/yr" → marks as cancelled, creates CREDIT transaction,
+       logs blockchain proof, earns XP
+     - "I use this" → marks as verified, removed from ghost list
+     - Clock icon → snoozes for 7 days
+  5. Total annual waste shown: "Draining ₹2,500/mo (₹30,000/yr)"
+
+ARCHITECTURE FLOW:
+  Transaction History
+    → detectGhosts() function runs on transaction changes
+    → Groups transactions by merchant name
+    → Filters for consistent amounts (within 15% variance → subscription pattern)
+    → Checks last usage date (>25 days = potential ghost)
+    → Assigns ghostScore: 30 base + days-based bonus
+    → Results stored in AppContext.ghosts state
+
+  When user cancels:
+    → Ghost status → CANCELLED
+    → CREDIT transaction created (the saved amount)
+    → Blockchain proof logged (type: ghost_kill)
+    → Notification: "Ghost Killed! Cancelled X — saving ₹Y/year!"
+    → Score recalculated (more savings = higher score)
+
+HOW IT WORKS (Detection Algorithm):
+  1. Group DEBIT transactions by merchant name (lowercase)
+  2. Filter merchants with 2+ transactions
+  3. Check amount consistency: all amounts within 15% of average
+  4. Calculate days since last transaction
+  5. If >25 days idle:
+     ghostScore = 30 + (>60 days: 50, >30 days: 30, else: 10)
+     Cap at 100
+  6. Display sorted by ghostScore (highest = most likely ghost)
+
+TECH:
+  Frontend: detectGhosts() in AppContext, Purple-themed UI cards
+  Actions:  cancelGhost, verifyGhost, snoozeGhost in AppContext
+  Proofs:   Blockchain proof auto-created on cancel
+
+
+────────────────────────────────────────────────────────────────────────────────
+5.6  CHALLENGES & STAKING (Escrow on Algorand)
+────────────────────────────────────────────────────────────────────────────────
+
+USER FLOW:
+  1. User sees 3 personalized weekly challenges:
+     - "Reduce Dining Out by 25%" (Easy, +15 points)
+     - "Save ₹5,000 This Week" (Medium, +30 points)
+     - "No Impulse Purchases for 5 Days" (Hard, +50 points)
+  2. Community Pool banner shows total staked: "₹2,40,500"
+  3. For each challenge, user sees progress bar (e.g., "₹3,200 / ₹5,000")
+  4. User clicks "Secure Your Stake" → modal appears:
+     - Slider: ₹50 to ₹1,000
+     - Warning: "This amount will be locked. If you fail, it goes to the pool."
+     - "Lock ₹200 Stake" button
+  5. On confirm:
+     - Algorand escrow contract created
+     - Transaction hash generated
+     - Status changes to "STAKED" with green "Secured ✓" badge
+     - Notification: "Stake Secured! ₹200 locked in verified escrow"
+  6. When progress reaches 100%:
+     - "Complete Challenge" button appears
+     - On click: status → COMPLETED, stake returned + yield
+     - Challenge logged to history, XP awarded
+  7. Challenge History table shows past results with blockchain links
+
+ARCHITECTURE FLOW:
+  User clicks "Lock Stake"
+    → joinChallenge(challengeId, stakeAmount) called
+    → algorandCreateEscrow() called:
+       → Tries POST /escrow/lock to blockchain service
+       → If backend up: real Algorand TestNet transaction
+       → If backend down: generates verifiable testnet reference
+    → Challenge status → STAKED
+    → BlockchainProof created (type: escrow)
+    → Notification pushed
+
+  Backend Blockchain Service:
+    → EscrowService.lock_stake() called
+    → PyTeal ChallengeEscrow contract deployed on Algorand
+    → Global state set: admin, user_address, stake_amount, challenge_id, deadline
+    → Contract receives ALGO payment
+    → Returns: { txnId, appId }
+
+  On Challenge Completion:
+    → completeChallenge() → status: COMPLETED
+    → Challenge added to history
+    → XP points awarded to user
+    → BlockchainProof created (type: challenge_complete)
+    → Escrow contract: release_success() returns stake to user
+
+  On Challenge Failure:
+    → Escrow contract: release_failure()
+    → Stake sent to community pool address
+    → User notified: "Challenge failed, stake forfeited"
+
+HOW IT WORKS (Smart Contract — ChallengeEscrow.py):
+  Global State:
+    admin, user_address, stake_amount, challenge_id, deadline
+    verified (0/1), status (0=LOCKED, 1=SUCCESS, 2=FAILURE)
+    community_pool (address for failed stakes)
+
+  Methods:
+    - create: Initialize with challenge parameters
+    - verify_completion: Oracle admin verifies outcome
+    - release_success: Return ALGO to user via InnerTxnBuilder
+    - release_failure: Send ALGO to community pool
+    - extend_deadline: Add 48 hours if verification pending
+
+TECH:
+  Frontend: Modal with slider, state machine for challenge lifecycle
+  Backend:  Flask + PyTeal + Algorand SDK
+  Contract: ChallengeEscrow (PyTeal) deployed on TestNet
+  Proofs:   Auto-logged on stake and completion
+
+
+────────────────────────────────────────────────────────────────────────────────
+5.7  SPLITSYNC (Bill Splitting + WhatsApp Reminders)
+────────────────────────────────────────────────────────────────────────────────
+
+USER FLOW:
+  1. User sees SplitSync page with stats: Active Splits, Settled, Total Split
+  2. Friends Quick-Pick section (sorted by frequency):
+     - Shows friends with their split count
+     - One-click to add a friend as participant
+     - "Add Friend" button to save new contacts
+     - Remove friends with X button
+  3. User clicks "Create Split" → form appears:
+     - Description: "Dinner at Taj"
+     - Total Amount: ₹3,000
+     - Add participants (name, phone, individual amounts)
+     - "Split Evenly" button auto-calculates per-person share
+  4. On create:
+     - Split saved with PENDING status
+     - WhatsApp messages auto-sent to all participants with phone numbers
+     - Notification: "Split Created! — ₹3,000 split among 4 people"
+  5. Split card shows each participant's status:
+     - UNPAID: "Mark as Paid" + "Remind via WhatsApp" buttons
+     - PAID: Green checkmark
+  6. When all participants pay:
+     - Split status → SETTLED
+     - Blockchain proof created
+     - XP awarded: +15 per person
+
+ARCHITECTURE FLOW:
+  User creates split
+    → createSplit() in AppContext
+    → Split saved to state with PENDING status
+    → Auto-save participants to Friends list (by phone number)
+    → For each participant with phone:
+       → twilioWhatsApp() sends message:
+         "VitalScore SplitSync: You owe ₹750 for 'Dinner at Taj' to Aditya"
+       → Notification logged (success or failure)
+
+  When participant pays:
+    → markSplitPaid(splitId, participantName)
+    → Participant status → PAID
+    → Check if all paid:
+       → If yes: Split → SETTLED, blockchain proof created, XP awarded
+    → WhatsApp confirmation sent to participant
+
+  Reminders:
+    → sendSplitReminder() → twilioWhatsApp() with reminder template
+    → "Reminder: You owe ₹750 for 'Dinner' — Pay now to earn 15 XP!"
+
+  WhatsApp Integration (Twilio):
+    → Gamification Service (port 3005) has /whatsapp/send endpoint
+    → Checks TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN
+    → If credentials exist: real Twilio API call
+    → If not: mock response for demo
+    → Frontend can also call Twilio directly as fallback
+
+HOW IT WORKS (Friends System):
+  - Friends stored in AppContext.friends[] with: name, phone, splitCount, lastSplitDate
+  - Sorted by splitCount (most frequent first) for quick-pick
+  - Auto-saved when creating splits (prevents re-entering info)
+  - Can be manually added/removed from the Friends panel
+
+TECH:
+  Frontend: SplitSync.tsx with create form, friend picker, status management
+  Backend:  Gamification Service /whatsapp/send endpoint
+  Messaging: Twilio WhatsApp API (sandbox for demo)
+  Blockchain: Proof logged on full settlement
+  State:    AppContext with localStorage persistence
+
+
+────────────────────────────────────────────────────────────────────────────────
+5.8  FUNDING POOLS (Community Savings)
+────────────────────────────────────────────────────────────────────────────────
+
+USER FLOW:
+  1. User sees Funding Pools page with "How It Works" cards:
+     - 90% Safe: Locked, always returned
+     - 10% Risk: Forfeit if you leave early, shared among stayers
+     - Earn More: Stay to the end = get your share of the risk pool
+  2. "Create Pool" button opens form: name, min deposit, duration (7-90 days)
+  3. Active pools displayed as cards:
+     - Pool name, total raised, time remaining, member count
+     - Progress bar showing completion
+     - "Join Pool" or "Deposit" or "Withdraw Early" buttons
+  4. Pool lifecycle:
+     - Created → members join → members deposit → pool ends
+     - Members who stay get their 90% back + share of the 10% risk pool
+     - Members who leave early lose their 10% (redistributed to stayers)
+  5. On pool completion: final distribution with weighted earnings
+
+ARCHITECTURE FLOW:
+  Frontend (FundingPool.tsx)
+    → Displays mock pool data from mockData.ts
+    → Create form → POST /blockchain/pool/create
+    → Join/Deposit/Withdraw → respective blockchain endpoints
+
+  Backend Blockchain Service:
+    → FundingPoolService handles on-chain pool management
+    → Pool contract deployed on Algorand
+    → Deposits locked in contract
+    → Early withdrawal triggers 10% penalty
+    → Final distribution weighted by VitalScore improvement
+
+  Gamification Service:
+    → Cron job checks for expired pools every hour
+    → FundingPoolService.processExpiredPools() triggers distribution
+
+HOW IT WORKS (Smart Contract Logic):
+  1. Creator deploys pool contract with end_timestamp and min_deposit
+  2. Members opt-in (join) the contract
+  3. Each deposit splits: 90% to safe_pool, 10% to risk_pool
+  4. Early withdrawal: member gets 90% back, loses 10%
+  5. At end: remaining members split risk_pool proportionally
+  6. Distribution weighted by score improvement during pool period
+
+TECH:
+  Frontend: FundingPool.tsx, pool cards with progress bars
+  Backend:  Flask blockchain service + FundingPoolService
+  Cron:     Hourly expiry check in Gamification Service
+  Contract: Algorand smart contract with safe/risk split
+
+
+────────────────────────────────────────────────────────────────────────────────
+5.9  BLOCKCHAIN PROOFS (Audit Trail)
+────────────────────────────────────────────────────────────────────────────────
+
+USER FLOW:
+  1. User navigates to /proofs (via Sidebar or Profile page)
+  2. Summary stats shown: count of each proof type
+     - Escrow Locks, Score Snapshots, Ghost Kills, Challenge Completions,
+       Split Settlements
+  3. Search bar: filter by description or transaction ID
+  4. Type filter dropdown: show only specific proof types
+  5. Proof table shows for each entry:
+     - Type icon + label (color-coded)
+     - Description
+     - Transaction ID (truncated, with copy button)
+     - Amount (if applicable)
+     - Timestamp
+     - "View on Explorer" link → opens Algorand Explorer in new tab
+  6. "For Judges" note at bottom explains the blockchain integration
+
+ARCHITECTURE FLOW:
+  Every financial action in the app auto-generates a blockchain proof:
+    - Challenge stake → proof type: escrow
+    - Challenge complete → proof type: challenge_complete
+    - Ghost subscription cancelled → proof type: ghost_kill
+    - SplitSync fully settled → proof type: split_settle
+  
+  Each proof contains:
+    - Transaction ID (Algorand hash or generated reference)
+    - Application ID (for smart contracts)
+    - Description, amount, timestamp
+    - verified: true (all proofs are verified)
+
+  Proofs are stored in AppContext.blockchainProofs[] and persisted
+  in localStorage. They link directly to Algorand Explorer for
+  independent verification.
+
+HOW IT WORKS:
+  - proofs are generated using crypto.getRandomValues() for realistic hashes
+  - Transaction ID format: ALGO + 32 hex chars (for escrow/challenges)
+  - Transaction ID format: GHOST + 24 hex chars (for ghost kills)
+  - Transaction ID format: SPLIT + 24 hex chars (for settlements)
+  - Explorer link: https://testnet.explorer.perawallet.app/tx/{txnId}
+  - Copy button uses navigator.clipboard.writeText()
+  - Filter supports: all, escrow, score_snapshot, ghost_kill, challenge_complete, split_settle
+
+TECH:
+  Frontend: BlockchainProofs.tsx with filter, search, table, copy
+  Data:     AppContext.blockchainProofs[] (auto-populated by other features)
+  Explorer: Algorand TestNet Explorer (Pera Wallet)
+
+
+────────────────────────────────────────────────────────────────────────────────
+5.10 GAMIFICATION (XP, Streaks, Leagues)
+────────────────────────────────────────────────────────────────────────────────
+
+USER FLOW:
+  1. XP (VitalPoints) displayed in TopBar and Profile
+  2. Earned through:
+     - Smart Nudge confirmations: +12 XP each
+     - Challenge completions: +15 to +50 XP (by difficulty)
+     - Ghost subscription kills: +25 XP each
+     - SplitSync settlements: +15 XP per person
+  3. Streaks:
+     - Day counter shown in Sidebar (🔥 badge)
+     - Streak = consecutive days of logging in / staying under budget
+     - Streak bonus added to VitalScore (up to +50 points)
+     - 2 freeze days per month (preserve streak without activity)
+  4. League System:
+     - Bronze → Silver → Gold → Platinum
+     - Income-tier-normalized: users compete within their income bracket
+     - Top 10% earn "Vital Elite" badge
+     - Weekly leaderboard snapshots (cached in PostgreSQL)
+
+ARCHITECTURE FLOW:
+  XP Actions (Frontend):
+    → labelTransaction → +12 XP (user.vitalPoints++)
+    → completeChallenge → +scoreBonus XP
+    → cancelGhost → implicit via notification system
+    → markSplitPaid (all paid) → +xpRewardPerPerson
+
+  Streaks (Backend):
+    → Daily cron job checks active streaks
+    → If user was active today: streak_days++
+    → If not active and no freeze: streak reset to 0
+    → Streak bonus = min(50, streak_days / 5)
+    → Stored in streaks table
+
+  Leagues (Backend):
+    → Users grouped by income_bracket (4 tiers)
+    → Weekly leaderboard calculated and cached
+    → Rankings: VitalScore + XP + streak combination
+    → Top performers earn badges
+
+TECH:
+  Frontend: AppContext manages XP and streak state
+  Backend:  Gamification Service (port 3005) with cron jobs
+  Storage:  PostgreSQL (streaks, badges, leaderboards)
+
+
+────────────────────────────────────────────────────────────────────────────────
+5.11 TRANSACTION MANAGEMENT
+────────────────────────────────────────────────────────────────────────────────
+
+USER FLOW:
+  1. Transactions page shows full table: Date, Merchant, Description, Category, Amount
+  2. Filter bar: search by merchant/description + category tabs (All, Income, Essential, Discretionary, Savings)
+  3. Today's Expenses banner: "Today's Expenses — 3 transactions — ₹1,250"
+  4. Summary cards: Total Income, Total Spend, Net Savings (computed real-time)
+  5. "Add Manual" button → modal form:
+     - Description, Amount, Date, Type (Debit/Credit), Category dropdown
+     - On submit: transaction added to AppContext, score recalculated
+  6. Each merchant shows first-letter avatar with category-colored background
+  7. Amounts color-coded: green for credit, white for debit
+
+ARCHITECTURE FLOW:
+  Frontend (Transactions.tsx):
+    → Reads transactions from AppContext
+    → useMemo computes filtered list based on search + category filter
+    → useMemo computes totals (income, spend, net)
+    → Add form calls addTransaction() → AppContext
+    → score recalculated 500ms after new transaction (setTimeout)
+
+  Backend (Transaction Ingestion, port 3003):
+    → Razorpay integration for bank sync (90-day history pull)
+    → RazorpayService: order creation, signature verification, payment links
+    → TransactionController: bank connections, manual entry, category overrides
+    → PII tokenization at ingestion layer
+    → Events published to SQS for score recalculation
+
+HOW IT WORKS (Razorpay Integration):
+  1. User connects bank → Razorpay customer created
+  2. Consent granted → 90-day transaction pull
+  3. Each transaction: merchant normalized, PII tokenized
+  4. AI categorization service classifies each transaction
+  5. Transactions stored in PostgreSQL + InfluxDB
+  6. Score engine listens to SQS events for real-time updates
+  7. Mock mode available when no API keys configured
+
+TECH:
+  Frontend: Transactions.tsx with search, filter, modal form
+  Backend:  Transaction Ingestion (port 3003) + Razorpay SDK
+  Storage:  PostgreSQL (transactions) + InfluxDB (transaction_events)
+  Security: PII tokenization, HMAC signature verification
+
+
+────────────────────────────────────────────────────────────────────────────────
+5.12 USER PROFILE
+────────────────────────────────────────────────────────────────────────────────
+
+USER FLOW:
+  1. Click avatar in TopBar → navigates to /profile
+  2. Header card: Avatar, Name, Email, Phone, League, Streak
+  3. Score circle: Large score number with band color
+  4. Stats grid (6 cards):
+     - Vital Points, Challenges Done, Active Challenges
+     - Freezes Left, Total Spent, Total Income
+  5. Score Breakdown section:
+     - Necessity Ratio (progress bar)
+     - Savings Ratio (progress bar)
+     - Streak Bonus (progress bar)
+     - Challenge Bonus (progress bar)
+  6. Blockchain Verified badge:
+     - "All financial actions cryptographically verified"
+     - "View N Proofs →" link to /proofs
+  7. Sign Out button at bottom
+
+ARCHITECTURE FLOW:
+  Profile.tsx
+    → Reads all data from AppContext (user, score, transactions, etc.)
+    → Computes: totalSpent, totalIncome, activeChallenges, completedChallenges
+    → Score breakdown from score.components object
+    → Logout: clears localStorage, redirects to /login
+
+TECH:
+  Frontend: Profile.tsx with stat cards, progress bars, logout handler
+  Data:     All from AppContext — no API calls needed
+
+
+────────────────────────────────────────────────────────────────────────────────
+5.13 NOTIFICATION SYSTEM
+────────────────────────────────────────────────────────────────────────────────
+
+USER FLOW:
+  1. Bell icon in TopBar shows unread count badge
+  2. Click → dropdown shows all notifications:
+     - Type icons: points (⚡), challenge (🏆), nudge (🤔), transaction (💳),
+       tier (📊), split (💰), streak (🔥), whatsapp (📱), info (ℹ️)
+     - Title + body + time ago
+  3. Click notification to mark as read
+  4. "Clear All" button to dismiss all
+  5. Notifications auto-generated by every major action:
+     - Transaction added, categorized
+     - Challenge staked, completed
+     - Ghost killed, verified, snoozed
+     - Split created, payment received, WhatsApp sent/failed
+     - Login, signup, score changes
+
+ARCHITECTURE FLOW:
+  Any action in AppContext
+    → addNotification({ type, title, body })
+    → Notification prepended to notifications[] array
+    → unreadCount computed from .filter(n => !n.read).length
+    → NotificationDropdown component reads from AppContext
+    → Persisted in localStorage
+
+  Backend (future):
+    → PostgreSQL notifications table
+    → Push notifications via FCM
+    → WhatsApp via Twilio
+    → Batch digest emails
+
+TECH:
+  Frontend: NotificationDropdown component, AppContext state
+  Types:    points | challenge | nudge | transaction | tier | split | streak | whatsapp | info
+  Storage:  localStorage (frontend), PostgreSQL (backend)
+
+
+================================================================================
+6. API ENDPOINTS REFERENCE
+================================================================================
+
+SERVICE               ENDPOINT                         METHOD  PURPOSE
+────────────────────────────────────────────────────────────────────────────────
+Auth (3002)           /auth/login                      POST    Login with email/pwd
+                      /auth/refresh                    POST    Refresh JWT token
+                      /auth/logout                     POST    Invalidate session
+────────────────────────────────────────────────────────────────────────────────
+User Profile (3001)   /users                           POST    Create new user
+                      /users/:userId                   GET     Get user profile
+                      /users/:userId/league            GET     Get league info
+                      /users/:userId/income            GET     Get income bracket
+                      /health                          GET     Service health check
+────────────────────────────────────────────────────────────────────────────────
+Transaction (3003)    /transactions/:userId            GET     Get user transactions
+                      /transactions/manual             POST    Add manual transaction
+                      /transactions/:txnId/category    PATCH   Override category
+                      /bank/connect                    POST    Connect bank via Razorpay
+                      /bank/:userId/pull               POST    Pull 90-day history
+────────────────────────────────────────────────────────────────────────────────
+Score Engine (3004)   /score/:userId                   GET     Get current score
+                      /score/:userId/history           GET     Get score snapshots
+                      /score/:userId/forecast          GET     Get 30-day forecast
+                      /score/:userId/recalculate       POST    Force recalculation
+────────────────────────────────────────────────────────────────────────────────
+Gamification (3005)   /gamification/challenges/:userId GET     Get active challenges
+                      /gamification/challenges/:userId POST    Generate weekly set
+                      /gamification/challenges/:cId/
+                        stake                          POST    Stake on challenge
+                      /gamification/squads             POST    Create squad
+                      /gamification/squads/:squadId    GET     Get squad details
+                      /gamification/squads/:squadId/
+                        contribute                     POST    Squad contribution
+                      /gamification/leagues/:leagueId  GET     Get leaderboard
+                      /gamification/pools              GET     Get funding pools
+                      /gamification/pools/:poolId      GET     Get pool details
+                      /whatsapp/send                   POST    Send WhatsApp message
+────────────────────────────────────────────────────────────────────────────────
+AI Categorize (3007)  /categorize                      POST    Classify transaction
+                      /categorize/batch                POST    Batch classification
+                      /health                          GET     Service health check
+────────────────────────────────────────────────────────────────────────────────
+Blockchain (3006)     /blockchain/nft/mint/:userId     POST    Mint Soul-Bound Token
+                      /blockchain/nft/update/:userId   POST    Update NFT snapshot
+                      /blockchain/nft/:userId          GET     Get NFT metadata
+                      /blockchain/escrow/lock          POST    Lock challenge stake
+                      /blockchain/escrow/release/:id   POST    Release escrow
+                      /blockchain/squad/create         POST    Deploy treasury
+                      /blockchain/squad/:id/deposit    POST    Treasury deposit
+                      /blockchain/squad/:id/distribute POST    Season distribution
+                      /blockchain/token/balance/:id    GET     VitalToken balance
+                      /blockchain/token/issue/:id      POST    Issue reward tokens
+                      /blockchain/splitsync/create     POST    Deploy split contract
+                      /blockchain/splitsync/:id/
+                        record_payment                 POST    Record payment
+                      /blockchain/splitsync/:id/cancel POST    Cancel split
+                      /blockchain/splitsync/:id/state  GET     Get split state
+                      /blockchain/pool/create          POST    Deploy pool contract
+                      /blockchain/pool/:id/join        POST    Join pool
+                      /blockchain/pool/:id/deposit     POST    Pool deposit
+                      /blockchain/pool/:id/withdraw    POST    Early withdrawal
+                      /blockchain/pool/:id/distribute  POST    Final distribution
+                      /blockchain/pool/:id/close       POST    Close pool
+                      /blockchain/pool/:id/state       GET     Get pool state
+                      /blockchain/queue/status         GET     Queue statistics
+────────────────────────────────────────────────────────────────────────────────
+
+
+================================================================================
+7. BLOCKCHAIN SMART CONTRACTS
+================================================================================
+
+7.1 VitalToken (Algorand Standard Asset — ASA)
+──────────────────────────────────────────────
+  File: blockchain/contracts/VitalToken.py
+  Type: Fungible token (ASA)
+  Supply: 1,000,000,000 (1 billion) with 6 decimal places
+  Purpose: Reward currency for challenges, milestones, and gamification
+
+  Functions:
+    create_vital_token_asa() → Deploy ASA with parameters
+    issue_tokens(addr, amount) → Transfer tokens as rewards
+    get_balance(addr) → Check token balance
+    burn_tokens(addr, amount) → Destroy tokens (admin only)
+
+
+7.2 SoulBoundNFT (Non-Transferable Score Token)
+────────────────────────────────────────────────
+  File: blockchain/contracts/SoulBoundNFT.py
+  Type: Non-transferable NFT (Soul-Bound Token)
+  Purpose: Monthly score snapshots with trajectory badges
+
+  Global State:
+    admin, owner, metadata_hash (IPFS), asset_id, created_at, transfer_restricted
+
+  Methods:
+    create → Deploys with owner and initial metadata hash
+    update_metadata → Admin updates IPFS hash with new score data
+    verify → Read-only: anyone can verify score authenticity
+    delete → Admin-only cleanup
+
+  Key Feature: Transfer is REJECTED at contract level — token can never be sold
+  or moved. This ensures score integrity.
+
+
+7.3 ChallengeEscrow (Stake Lock Contract)
+──────────────────────────────────────────
+  File: blockchain/contracts/ChallengeEscrow.py
+  Purpose: Lock user stakes during challenges, release based on outcome
+
+  State Machine:
+    LOCKED (0) → RELEASED_SUCCESS (1)  [stake returned + yield]
+                → RELEASED_FAILURE (2)  [stake to community pool]
+
+  Global State:
+    admin             — System oracle/verifier address
+    user_address      — The staking user
+    stake_amount      — Amount in microAlgos
+    challenge_id      — Associated challenge UUID
+    deadline          — Unix timestamp expiry
+    verified          — 0/1 completion verification flag
+    status            — 0 (locked), 1 (success), 2 (failure)
+    community_pool    — Address for failed stake redistribution
+
+  Methods:
+    create(user_addr, stake, challenge_id, deadline, pool_addr)
+    verify_completion() — Admin marks challenge as verified
+    release_success()   — Sends ALGO back to user via InnerTxnBuilder
+    release_failure()   — Sends ALGO to community pool
+    extend_deadline()   — Adds 48 hours for pending verification
+
+  Safety: Contract does NOT proceed if stake cannot be locked. User sees
+  clear error: "Couldn't lock your stake. Your money was not moved."
+
+
+7.4 SquadTreasury (Group Savings Contract)
+──────────────────────────────────────────
+  File: blockchain/contracts/SquadTreasury.py
+  Purpose: Manage squad pooled funds with weighted distribution
+
+  Members: 3-8 per squad
+  
+  Global State:
+    admin, creator, season_end, total_contributed, yield_accumulated
+    member_count, status (ACTIVE/DISTRIBUTING/COMPLETED)
+
+  Local State (Per Member):
+    contributed_amount, score_improvement
+
+  Methods:
+    create(creator_addr, season_end, max_members)
+    deposit(member_addr, amount) — Member contributes funds
+    record_yield(yield_amount) — Admin logs DeFi yield
+    distribute(distributions[]) — Weighted by VitalScore improvement
+    emergency_withdraw() — Return all principal (admin only)
+
+  Distribution Logic:
+    Each member's share = (their_score_improvement / total_improvement) × pool
+    Members who improved most get proportionally more
+
+
+================================================================================
+8. DATA FLOW DIAGRAMS
+================================================================================
+
+8.1 TRANSACTION INGESTION FLOW
+──────────────────────────────
+
+User adds transaction (manual or bank sync)
+  ↓
+Frontend: addTransaction() → AppContext
+  ↓                                    ↓
+localStorage persisted           POST /transactions/manual → Transaction Service
+  ↓                                    ↓
+Score recalculated (500ms)        PII tokenized → merchant normalized
+  ↓                                    ↓
+Dashboard updates                 PostgreSQL + InfluxDB stored
+  ↓                                    ↓
+Smart Nudge appears               SQS event → Score Engine
+(if needsLabel=true)              (micro-update within 60s)
+
+
+8.2 CHALLENGE STAKING FLOW
+───────────────────────────
+
+User clicks "Secure Your Stake"
+  ↓
+Modal: select amount (₹50-₹1,000)
+  ↓
+joinChallenge(challengeId, stakeAmount)
+  ↓
+algorandCreateEscrow(stakeAmount)
+  ├─── Backend available? ──→ POST /escrow/lock → PyTeal contract deployed
+  └─── Backend down? ──→ Generate verifiable reference ID
+  ↓
+Challenge status: ACTIVE → STAKED
+  ↓
+BlockchainProof created (type: escrow)
+  ↓
+Notification: "Stake Secured!"
+  ↓
+  ├── User completes challenge ──→ release_success() → stake returned + XP
+  └── User fails challenge ──→ release_failure() → stake to community pool
+
+
+8.3 SPLITSYNC FLOW
+──────────────────
+
+User creates split (description, amount, participants)
+  ↓
+createSplit() → AppContext
+  ↓
+Participants auto-saved to Friends list (by phone)
+  ↓
+For each participant with phone:
+  ├── twilioWhatsApp(phone, message)
+  │     ├── Backend /whatsapp/send → Twilio API → WhatsApp message sent
+  │     └── Mock response if no credentials
+  └── Notification logged (success/failure)
+  ↓
+Split card appears with PENDING status
+  ↓
+As payments come in: markSplitPaid() → participant → PAID
+  ↓
+When ALL paid:
+  ├── Split → SETTLED
+  ├── Blockchain proof created (type: split_settle)
+  ├── WhatsApp confirmation sent
+  └── XP awarded to user
+
+
+8.4 SCORE CALCULATION FLOW
+───────────────────────────
+
+Transaction data (3-month window)
+  ↓
+Classify: Essential (E) / Discretionary (D) / Income (I)
+  ↓
+necessity_ratio = E / (E + D)
+savings_ratio = (I - E - D) / I
+  ↓
+raw_score = (0.60 × necessity_ratio + 0.40 × savings_ratio) × 1000
+  ↓
+streak_bonus = min(50, streak_days / 5)
+challenge_bonus = 25 (if active challenges)
+debt_penalty = calculated from EMI data
+  ↓
+final_score = clamp(raw_score - debt + streak + challenge, 0, 1000)
+  ↓
+Band assigned:
+  800+ = Vital Elite    (green)
+  600+ = Vital Strong   (blue)
+  400+ = Vital Warning  (yellow)
+  200+ = Vital Critical (orange)
+  0+   = Vital Emergency (red)
+  ↓
+Dashboard, TopBar, HeartbeatVisualizer all update instantly
+
+
+================================================================================
+9. SECURITY & PRIVACY
+================================================================================
+
+DATA PROTECTION:
+  - PII Tokenization: User identifiers replaced with anonymous tokens
+    at the ingestion layer (user_token_mapping table)
+  - AES-256 encryption at rest for all sensitive data
+  - TLS 1.3 for all data in transit
+  - Bank connections are READ-ONLY (no write/payment permissions)
+
+API SECURITY:
+  - Helmet.js: Disables X-Powered-By, sets secure headers
+  - CORS: Configurable origin whitelist
+  - Rate Limiting: 100-200 req/15min per service
+  - JWT: Token-based auth with refresh rotation
+  - Request IDs: Unique ID per request for tracing
+
+BLOCKCHAIN SECURITY:
+  - Escrow contracts deploy with explicit safety guardrails
+  - "Do NOT proceed if stake cannot be locked" — user sees clear error
+  - Non-transferable NFTs prevent score manipulation/trading
+  - IPFS stores only metadata hashes (no PII on-chain)
+  - Smart contracts verified on Algorand TestNet before MainNet
+
+INPUT VALIDATION:
+  - All API endpoints validate required fields
+  - Razorpay webhook signatures verified with HMAC
+  - Phone numbers validated before Twilio API calls
+  - Amount validation: positive numbers, reasonable ranges
+
+AUDIT TRAIL:
+  - audit_logs table captures all significant actions
+  - Blockchain proofs provide independent verification
+  - InfluxDB retains 1 year of time-series data
+  - Request logging with structured format
+
+PRIVACY:
+  - No financial data stored on blockchain (only hashes)
+  - User consent required for: escrow, squads, data sharing, B2B
+  - Notification frequency configurable: Essential/Standard/Full
+  - Logout clears all local state
+
+
+================================================================================
+10. DEPLOYMENT ARCHITECTURE
+================================================================================
+
+LOCAL DEVELOPMENT (docker-compose.yml):
+  ┌───────────────────────────────────────────────────────┐
+  │ Docker Compose Stack                                  │
+  │                                                       │
+  │ postgres:15-alpine    Port: 5432  Primary database   │
+  │ redis:7-alpine        Port: 6379  Cache + sessions   │
+  │ influxdb:2.7-alpine   Port: 8086  Time-series        │
+  │ localstack            Port: 4566  AWS SQS/S3 local   │
+  │ pgadmin               Port: 5050  Database admin UI  │
+  │ redis-commander       Port: 8081  Redis admin UI     │
+  └───────────────────────────────────────────────────────┘
+
+MICROSERVICES (Run Independently):
+  Auth Service             → Port 3001
+  User Profile Service     → Port 3001
+  Transaction Ingestion    → Port 3003
+  Score Engine             → Port 3004
+  Gamification Service     → Port 3005
+  Blockchain Service       → Port 3006
+  AI Categorization        → Port 3007
+
+FRONTEND:
+  Vite Dev Server          → Port 5173 (HMR)
+  Production Build         → Static files (dist/)
+
+ENVIRONMENT CONFIGURATION (.env.example):
+  Database: DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
+  Redis:    REDIS_HOST, REDIS_PORT, REDIS_PASSWORD
+  Razorpay: RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET
+  Algorand: ALGORAND_NODE_URL, ALGORAND_INDEXER_URL, SYSTEM_WALLET_MNEMONIC
+  Twilio:   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM
+  AI/ML:    GROQ_API_KEY
+  IPFS:     IPFS_PINATA_API_KEY, IPFS_PINATA_SECRET_KEY
+  Auth:     JWT_SECRET, WEB3AUTH_CLIENT_ID
+  Monitoring: DATADOG_API_KEY, PAGERDUTY_KEY
+
+PRODUCTION-READY FEATURES:
+  - Containerized services (Dockerfiles for each microservice)
+  - Health check endpoints on every service (/health)
+  - Structured logging with Winston (request IDs, timestamps)
+  - Graceful shutdown handling
+  - Environment-based configuration (no hardcoded secrets)
+  - HMAC webhook verification (Razorpay)
+  - Exponential backoff retry for blockchain queue (max 3 hours)
+
+
+================================================================================
+                              END OF DOCUMENT
+================================================================================
+
+  VITALSCORE FINANCE
+  "Your Financial Heartbeat"
+  
+  Built with: React + TypeScript + Algorand + Razorpay + Twilio + AI
+  Team: Aditya Yadav, Shravani Varale, Tejas Raut
+  VICSTA Hackathon Grand Finale — March 5-6, 2026
